@@ -6,6 +6,7 @@ using System.Text;
 using Winerr.NET.Core.Enums;
 using Winerr.NET.Core.Models.Assets;
 using Winerr.NET.Core.Models.Fonts;
+using SharpCompress.Archives.SevenZip;
 
 namespace Winerr.NET.Core.Managers
 {
@@ -20,6 +21,9 @@ namespace Winerr.NET.Core.Managers
         private readonly Dictionary<string, Image<Rgba32>> _imageCache = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, BitmapFont> _fontMetricsCache = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, FontSet> _fontSetCache = new(StringComparer.OrdinalIgnoreCase);
+
+        private readonly Dictionary<string, Dictionary<int, byte[]>> _iconArchiveCache = new(StringComparer.OrdinalIgnoreCase);
+        private const string IconArchiveName = "Icons.7z";
 
         private Assembly? _assetsAssembly;
         private bool _isLoaded = false;
@@ -41,10 +45,10 @@ namespace Winerr.NET.Core.Managers
 
             var allResourceNames = _assetsAssembly.GetManifestResourceNames();
             ParseAndBuildAssetTree(allResourceNames);
+            PreloadIconArchives(allResourceNames);
+
             _isLoaded = true;
         }
-
-        #region Public API
 
         public FontSet? GetFontSet(string fontName, string sizeKey, string variationName)
         {
@@ -79,9 +83,24 @@ namespace Winerr.NET.Core.Managers
             _fontSetCache[cacheKey] = newFontSet;
             return newFontSet;
         }
-        
+
         public Image<Rgba32>? GetIcon(SystemStyle style, int iconId)
         {
+            var (styleName, themeName) = ParseSystemStyleId(style.Id);
+
+            if (_iconArchiveCache.TryGetValue(styleName, out var iconDict) && iconDict.TryGetValue(iconId, out var iconBytes))
+            {
+                string cacheKey = $"icon_{styleName}_{iconId}";
+                if (_imageCache.TryGetValue(cacheKey, out var cachedImage))
+                {
+                    return cachedImage;
+                }
+
+                var image = Image.Load<Rgba32>(iconBytes);
+                _imageCache[cacheKey] = image;
+                return image;
+            }
+
             var resourcePath = FindResourcePath(
                 style,
                 iconId,
@@ -126,9 +145,42 @@ namespace Winerr.NET.Core.Managers
             return _assetsAssembly.GetManifestResourceStream(fullResourceName);
         }
 
-        #endregion
+        private void PreloadIconArchives(string[] resourceNames)
+        {
+            if (_assetsAssembly == null) return;
 
-        #region Private Asset Tree Builders
+            var iconArchives = resourceNames
+                .Where(name => name.EndsWith(IconArchiveName, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            foreach (var resourcePath in iconArchives)
+            {
+                var parts = resourcePath.Split('.');
+                if (parts.Length < 5) continue;
+
+                string styleName = parts[2];
+
+                using var stream = _assetsAssembly.GetManifestResourceStream(resourcePath);
+                if (stream == null) continue;
+
+                using var archive = SevenZipArchive.Open(stream);
+                var iconDict = new Dictionary<int, byte[]>();
+
+                foreach (var entry in archive.Entries)
+                {
+                    if (entry.IsDirectory) continue;
+
+                    if (int.TryParse(Path.GetFileNameWithoutExtension(entry.Key), out int iconId))
+                    {
+                        using var entryStream = entry.OpenEntryStream();
+                        using var memoryStream = new MemoryStream();
+                        entryStream.CopyTo(memoryStream);
+                        iconDict[iconId] = memoryStream.ToArray();
+                    }
+                }
+                _iconArchiveCache[styleName] = iconDict;
+            }
+        }
 
         private void ParseAndBuildAssetTree(string[] resourceNames)
         {
@@ -136,6 +188,8 @@ namespace Winerr.NET.Core.Managers
             foreach (var name in resourceNames.OrderBy(n => n.Length))
             {
                 if (!name.StartsWith(prefix)) continue;
+
+                if (name.EndsWith(IconArchiveName, StringComparison.OrdinalIgnoreCase)) continue;
 
                 var path = name.Substring(prefix.Length);
                 var parts = path.Split('.');
@@ -238,9 +292,6 @@ namespace Winerr.NET.Core.Managers
             fileNode.SpriteSheetPath = fullPath;
         }
 
-        #endregion
-
-        #region Private Helpers
         private string? FindResourcePath<TKey>(
             SystemStyle style,
             TKey key,
@@ -271,7 +322,8 @@ namespace Winerr.NET.Core.Managers
                 currentStyle = currentStyle.ResourceAliasFor;
             }
 
-            return null;        }
+            return null;
+        }
 
         private (string styleName, string themeName) ParseSystemStyleId(string id)
         {
@@ -429,7 +481,5 @@ namespace Winerr.NET.Core.Managers
             _fontMetricsCache[resourcePath] = metrics;
             return metrics;
         }
-
-        #endregion
     }
 }
