@@ -9,8 +9,8 @@
 		<AssemblyVersion>0</AssemblyVersion>
 		<Major>0</Major>
 		<Minor>9</Minor>
-		<Patch>7</Patch>
-		<BuildNumber>371</BuildNumber>
+		<Patch>8</Patch>
+		<BuildNumber>389</BuildNumber>
 		<VersionSuffix></VersionSuffix>
 
 		<FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>
@@ -23,6 +23,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="SharpCompress" Version="0.40.0" />
 		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
 		<PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
 	</ItemGroup>

@@ -1,4 +1,7 @@
-﻿using SixLabors.ImageSharp;
+﻿using SharpCompress.Archives;
+using SharpCompress.Archives.SevenZip;
+using SharpCompress.Common;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System.Reflection;
@@ -6,11 +9,10 @@ using System.Text;
 using Winerr.NET.Core.Enums;
 using Winerr.NET.Core.Models.Assets;
 using Winerr.NET.Core.Models.Fonts;
-using SharpCompress.Archives.SevenZip;
 
 namespace Winerr.NET.Core.Managers
 {
-    public sealed class AssetManager
+    public sealed class AssetManager : IDisposable
     {
         private static readonly Lazy<AssetManager> _lazyInstance = new(() => new AssetManager());
         public static AssetManager Instance => _lazyInstance.Value;
@@ -22,11 +24,13 @@ namespace Winerr.NET.Core.Managers
         private readonly Dictionary<string, BitmapFont> _fontMetricsCache = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, FontSet> _fontSetCache = new(StringComparer.OrdinalIgnoreCase);
 
-        private readonly Dictionary<string, Dictionary<int, byte[]>> _iconArchiveCache = new(StringComparer.OrdinalIgnoreCase);
-        private const string IconArchiveName = "Icons.7z";
+        private readonly Dictionary<string, (SevenZipArchive Archive, Stream Stream)> _openArchives = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, Dictionary<int, IArchiveEntry>> _iconIndex = new(StringComparer.OrdinalIgnoreCase);
+        private const string IconArchiveName = "Archive.7z";
 
         private Assembly? _assetsAssembly;
         private bool _isLoaded = false;
+        private bool _disposed = false;
 
         private AssetManager() { }
 
@@ -40,12 +44,12 @@ namespace Winerr.NET.Core.Managers
             }
             catch (FileNotFoundException)
             {
-                throw new FileNotFoundException("Критическая ошибка: не найден файл Winerr.NET.Assets.dll.");
+                throw new FileNotFoundException("Critical error: Winerr.NET.Assets.dll not found.");
             }
 
             var allResourceNames = _assetsAssembly.GetManifestResourceNames();
             ParseAndBuildAssetTree(allResourceNames);
-            PreloadIconArchives(allResourceNames);
+            IndexIconArchives(allResourceNames);
 
             _isLoaded = true;
         }
@@ -87,16 +91,21 @@ namespace Winerr.NET.Core.Managers
         public Image<Rgba32>? GetIcon(SystemStyle style, int iconId)
         {
             var (styleName, themeName) = ParseSystemStyleId(style.Id);
+            string cacheKey = $"icon_{styleName}_{iconId}";
 
-            if (_iconArchiveCache.TryGetValue(styleName, out var iconDict) && iconDict.TryGetValue(iconId, out var iconBytes))
+            if (_imageCache.TryGetValue(cacheKey, out var cachedImage))
             {
-                string cacheKey = $"icon_{styleName}_{iconId}";
-                if (_imageCache.TryGetValue(cacheKey, out var cachedImage))
-                {
-                    return cachedImage;
-                }
+                return cachedImage;
+            }
 
-                var image = Image.Load<Rgba32>(iconBytes);
+            if (_iconIndex.TryGetValue(styleName, out var iconDict) && iconDict.TryGetValue(iconId, out var iconEntry))
+            {
+                using var entryStream = iconEntry.OpenEntryStream();
+                using var memoryStream = new MemoryStream();
+                entryStream.CopyTo(memoryStream);
+                memoryStream.Position = 0;
+
+                var image = Image.Load<Rgba32>(memoryStream);
                 _imageCache[cacheKey] = image;
                 return image;
             }
@@ -145,7 +154,7 @@ namespace Winerr.NET.Core.Managers
             return _assetsAssembly.GetManifestResourceStream(fullResourceName);
         }
 
-        private void PreloadIconArchives(string[] resourceNames)
+        private void IndexIconArchives(string[] resourceNames)
         {
             if (_assetsAssembly == null) return;
 
@@ -158,27 +167,23 @@ namespace Winerr.NET.Core.Managers
                 var parts = resourcePath.Split('.');
                 if (parts.Length < 5) continue;
 
-                string styleName = parts[2];
+                string styleName = parts[4];
 
-                using var stream = _assetsAssembly.GetManifestResourceStream(resourcePath);
+                var stream = _assetsAssembly.GetManifestResourceStream(resourcePath);
                 if (stream == null) continue;
 
-                using var archive = SevenZipArchive.Open(stream);
-                var iconDict = new Dictionary<int, byte[]>();
+                var archive = SevenZipArchive.Open(stream);
+                _openArchives[styleName] = (archive, stream);
 
-                foreach (var entry in archive.Entries)
+                var iconDict = new Dictionary<int, IArchiveEntry>();
+                foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
                 {
-                    if (entry.IsDirectory) continue;
-
                     if (int.TryParse(Path.GetFileNameWithoutExtension(entry.Key), out int iconId))
                     {
-                        using var entryStream = entry.OpenEntryStream();
-                        using var memoryStream = new MemoryStream();
-                        entryStream.CopyTo(memoryStream);
-                        iconDict[iconId] = memoryStream.ToArray();
+                        iconDict[iconId] = entry;
                     }
                 }
-                _iconArchiveCache[styleName] = iconDict;
+                _iconIndex[styleName] = iconDict;
             }
         }
 
@@ -480,6 +485,34 @@ namespace Winerr.NET.Core.Managers
             var metrics = BitmapFont.FromXml(xmlContent);
             _fontMetricsCache[resourcePath] = metrics;
             return metrics;
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+
+            foreach (var (archive, stream) in _openArchives.Values)
+            {
+                archive.Dispose();
+                stream.Dispose();
+            }
+
+            _openArchives.Clear();
+            _iconIndex.Clear();
+
+            foreach (var image in _imageCache.Values)
+            {
+                image.Dispose();
+            }
+            _imageCache.Clear();
+
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
+
+        ~AssetManager()
+        {
+            Dispose();
         }
     }
 }

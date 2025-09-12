@@ -1,5 +1,6 @@
 ﻿using CommandLine;
 using CommandLine.Text;
+using SharpCompress.Archives.SevenZip;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Diagnostics;
