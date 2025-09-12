@@ -3,6 +3,7 @@
 > A powerful and accurate OS error window generator built with .NET.
 
 To get started, go to the [Releases page](https://github.com/DimaYastrebov/Winerr.NET/releases) and download the application archive for your system's architecture (e.g., `win-x64`, `win-x86`). Unpack it and use your terminal to work with `Winerr.NET.Cli.exe`.
+Note that `-Plus` versions in the releases already include the .NET runtime, in case you don't want to install it manually.
 
 Example generation command. Use `\n` for a line break. To display the literal text `\n`, escape it: `\\n`.
 ```shell
