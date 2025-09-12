@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Title>Winerr.NET Assets Library</Title>
+
+		<AssemblyVersion>0</AssemblyVersion>
+		<Major>0</Major>
+		<Minor>6</Minor>
+		<Patch>0</Patch>
+		<BuildNumber>173</BuildNumber>
+		<VersionSuffix></VersionSuffix>
+
+		<FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>
+		<Version>$(Major).$(Minor).$(Patch)</Version>
+		<InformationalVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)$(VersionSuffix)</InformationalVersion>
+
+		<Authors>DimaYastrebov</Authors>
+		<Copyright>Copyright (c) DimaYastrebov 2025</Copyright>
+		<Product>Winerr.NET Assets Library</Product>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Fonts\**\*.*" />
+		<EmbeddedResource Include="Icons\**\*.*" />
+		<EmbeddedResource Include="Styles\**\*.*" />
+	</ItemGroup>
+</Project>

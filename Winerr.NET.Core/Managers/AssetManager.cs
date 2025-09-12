@@ -1,0 +1,435 @@
+﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using System.Reflection;
+using System.Text;
+using Winerr.NET.Core.Enums;
+using Winerr.NET.Core.Models.Assets;
+using Winerr.NET.Core.Models.Fonts;
+
+namespace Winerr.NET.Core.Managers
+{
+    public sealed class AssetManager
+    {
+        private static readonly Lazy<AssetManager> _lazyInstance = new(() => new AssetManager());
+        public static AssetManager Instance => _lazyInstance.Value;
+
+        private readonly Dictionary<string, StyleDefinition> _styles = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, FontDefinition> _fonts = new(StringComparer.OrdinalIgnoreCase);
+
+        private readonly Dictionary<string, Image<Rgba32>> _imageCache = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, BitmapFont> _fontMetricsCache = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, FontSet> _fontSetCache = new(StringComparer.OrdinalIgnoreCase);
+
+        private Assembly? _assetsAssembly;
+        private bool _isLoaded = false;
+
+        private AssetManager() { }
+
+        public void LoadAssets()
+        {
+            if (_isLoaded) return;
+
+            try
+            {
+                _assetsAssembly = Assembly.Load("Winerr.NET.Assets");
+            }
+            catch (FileNotFoundException)
+            {
+                throw new FileNotFoundException("Критическая ошибка: не найден файл Winerr.NET.Assets.dll.");
+            }
+
+            var allResourceNames = _assetsAssembly.GetManifestResourceNames();
+            ParseAndBuildAssetTree(allResourceNames);
+            _isLoaded = true;
+        }
+
+        #region Public API
+
+        public FontSet? GetFontSet(string fontName, string sizeKey, string variationName)
+        {
+            string cacheKey = $"{fontName}_{sizeKey}_{variationName}";
+            if (_fontSetCache.TryGetValue(cacheKey, out var cachedFontSet))
+            {
+                return cachedFontSet;
+            }
+
+            if (!_fonts.TryGetValue(fontName, out var fontDef) || !fontDef.Sizes.TryGetValue(sizeKey, out var sizeDef))
+            {
+                return null;
+            }
+
+            var variationParts = variationName.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
+            string? metricsPath = FindMetricsPathForVariation(sizeDef.VariationRoot, variationParts);
+
+            if (string.IsNullOrEmpty(metricsPath))
+            {
+                return null;
+            }
+
+            var metrics = LoadMetricsFromResource(metricsPath);
+            if (metrics == null)
+            {
+                return null;
+            }
+
+            var newFontSet = new FontSet(metrics);
+            LoadFontVariationsRecursive(sizeDef.VariationRoot, "", newFontSet);
+
+            _fontSetCache[cacheKey] = newFontSet;
+            return newFontSet;
+        }
+        
+        public Image<Rgba32>? GetIcon(SystemStyle style, int iconId)
+        {
+            var resourcePath = FindResourcePath(
+                style,
+                iconId,
+                (theme, key) => theme.IconPaths.TryGetValue(key, out var path) ? path : null,
+                (styleDef, key) => styleDef.GlobalIconPaths.TryGetValue(key, out var path) ? path : null
+            );
+
+            return resourcePath != null ? LoadImageFromResource(resourcePath) : null;
+        }
+
+        public Image<Rgba32>? GetStyleImage(SystemStyle style, string partName)
+        {
+            var resourcePath = FindResourcePath(
+                style,
+                partName,
+                (theme, key) => theme.FramePartPaths.TryGetValue(key, out var path) ? path : null,
+                (styleDef, key) => null
+            );
+
+            return resourcePath != null ? LoadImageFromResource(resourcePath) : null;
+        }
+
+        public Image<Rgba32>? GetButtonImage(SystemStyle style, string partName)
+        {
+            var resourcePath = FindResourcePath(
+                style,
+                partName,
+                (theme, key) => theme.ButtonPaths.TryGetValue(key, out var path) ? path : null,
+                (styleDef, key) => styleDef.GlobalButtonPaths.TryGetValue(key, out var path) ? path : null
+            );
+
+            return resourcePath != null ? LoadImageFromResource(resourcePath) : null;
+        }
+
+        public Stream? GetResourceStream(string fullResourceName)
+        {
+            if (_assetsAssembly == null)
+            {
+                LoadAssets();
+                if (_assetsAssembly == null) return null;
+            }
+            return _assetsAssembly.GetManifestResourceStream(fullResourceName);
+        }
+
+        #endregion
+
+        #region Private Asset Tree Builders
+
+        private void ParseAndBuildAssetTree(string[] resourceNames)
+        {
+            const string prefix = "Winerr.NET.Assets.";
+            foreach (var name in resourceNames.OrderBy(n => n.Length))
+            {
+                if (!name.StartsWith(prefix)) continue;
+
+                var path = name.Substring(prefix.Length);
+                var parts = path.Split('.');
+
+                if (parts.Length < 3) continue;
+
+                if (parts[0].Equals("Styles", StringComparison.OrdinalIgnoreCase))
+                {
+                    ParseStyleResource(parts.Skip(1).ToArray(), name);
+                }
+                else if (parts[0].Equals("Fonts", StringComparison.OrdinalIgnoreCase))
+                {
+                    ParseFontResource(parts.Skip(1).ToArray(), name);
+                }
+            }
+        }
+
+        private void ParseStyleResource(string[] parts, string fullPath)
+        {
+            if (parts.Length < 3) return;
+
+            string styleName = parts[0];
+            var styleDef = GetOrCreateStyle(styleName);
+            string resourceType = parts[1];
+
+            string fileName = string.Join(".", parts.Take(parts.Length - 1).TakeLast(parts.Length - 2));
+
+            switch (resourceType.ToLower())
+            {
+                case "icons" when parts.Length == 4 && int.TryParse(parts[2], out int iconId):
+                    styleDef.GlobalIconPaths[iconId] = fullPath;
+                    break;
+
+                case "buttons" when parts.Length == 4:
+                    styleDef.GlobalButtonPaths[parts[2]] = fullPath;
+                    break;
+
+                case "themes" when parts.Length >= 5:
+                    string themeName = parts[2];
+                    var themeDef = GetOrCreateTheme(styleDef, themeName);
+
+                    if (parts.Length == 5)
+                    {
+                        themeDef.FramePartPaths[parts[3]] = fullPath;
+                    }
+                    else if (parts.Length == 6)
+                    {
+                        string subfolder = parts[3];
+                        string subfolderFileName = parts[4];
+
+                        if (subfolder.Equals("Icons", StringComparison.OrdinalIgnoreCase) && int.TryParse(subfolderFileName, out int themeIconId))
+                        {
+                            themeDef.IconPaths[themeIconId] = fullPath;
+                        }
+                        else if (subfolder.Equals("Buttons", StringComparison.OrdinalIgnoreCase))
+                        {
+                            themeDef.ButtonPaths[subfolderFileName] = fullPath;
+                        }
+                    }
+                    break;
+            }
+        }
+
+        private void ParseFontResource(string[] parts, string fullPath)
+        {
+            if (parts.Length < 2) return;
+
+            var cleanParts = parts.Select(p =>
+                (p.Length > 1 && p[0] == '_' && char.IsDigit(p[1])) ? p.Substring(1) : p
+            ).ToList();
+
+            string fontName = cleanParts[0];
+            var fontDef = GetOrCreateFont(fontName);
+
+            if (cleanParts.Count < 4) return;
+
+            string sizeKey = cleanParts[1];
+            var sizeDef = GetOrCreateFontSize(fontDef, sizeKey);
+
+            var variationPathParts = cleanParts.Skip(2).Take(cleanParts.Count - 4).ToList();
+
+            FontVariationNode currentNode = sizeDef.VariationRoot;
+            foreach (var part in variationPathParts)
+            {
+                if (!currentNode.Children.TryGetValue(part, out var childNode))
+                {
+                    childNode = new FontVariationNode(part);
+                    currentNode.Children[part] = childNode;
+                }
+                currentNode = childNode;
+            }
+
+            string fileName = string.Join(".", cleanParts.TakeLast(2));
+
+            if (!currentNode.Children.TryGetValue(fileName, out var fileNode))
+            {
+                fileNode = new FontVariationNode(fileName);
+                currentNode.Children[fileNode.Name] = fileNode;
+            }
+            fileNode.SpriteSheetPath = fullPath;
+        }
+
+        #endregion
+
+        #region Private Helpers
+        private string? FindResourcePath<TKey>(
+            SystemStyle style,
+            TKey key,
+            Func<ThemeDefinition, TKey, string?> themePathSelector,
+            Func<StyleDefinition, TKey, string?> globalPathSelector)
+        {
+            var currentStyle = style;
+
+            while (currentStyle != null)
+            {
+                var (styleName, themeName) = ParseSystemStyleId(currentStyle.Id);
+
+                if (_styles.TryGetValue(styleName, out var styleDef))
+                {
+                    if (styleDef.Themes.TryGetValue(themeName, out var themeDef))
+                    {
+                        var path = themePathSelector(themeDef, key);
+                        if (path != null) return path;
+                    }
+                    if (styleDef.Themes.TryGetValue("default", out var defaultThemeDef))
+                    {
+                        var path = themePathSelector(defaultThemeDef, key);
+                        if (path != null) return path;
+                    }
+                    var globalPath = globalPathSelector(styleDef, key);
+                    if (globalPath != null) return globalPath;
+                }
+                currentStyle = currentStyle.ResourceAliasFor;
+            }
+
+            return null;        }
+
+        private (string styleName, string themeName) ParseSystemStyleId(string id)
+        {
+            var parts = id.Split('_', 2);
+            return parts.Length >= 2 ? (parts[0], parts[1]) : (parts[0], "default");
+        }
+
+        private string? FindMetricsPathForVariation(FontVariationNode rootNode, string[] variationPathParts)
+        {
+            for (int i = variationPathParts.Length; i >= 0; i--)
+            {
+                var currentPathParts = variationPathParts.Take(i);
+                FontVariationNode currentNode = rootNode;
+                bool pathExists = true;
+
+                foreach (var part in currentPathParts)
+                {
+                    if (currentNode.Children.TryGetValue(part, out var nextNode))
+                    {
+                        currentNode = nextNode;
+                    }
+                    else
+                    {
+                        pathExists = false;
+                        break;
+                    }
+                }
+
+                if (!pathExists) continue;
+
+                if (currentNode.Children.TryGetValue("spritesheet.xml", out var metricsNode) && !string.IsNullOrEmpty(metricsNode.SpriteSheetPath))
+                {
+                    return metricsNode.SpriteSheetPath;
+                }
+            }
+
+            if (rootNode.Children.TryGetValue("spritesheet.xml", out var rootMetricsNode) && !string.IsNullOrEmpty(rootMetricsNode.SpriteSheetPath))
+            {
+                return rootMetricsNode.SpriteSheetPath;
+            }
+
+            return null;
+        }
+
+        private void LoadFontVariationsRecursive(FontVariationNode node, string currentPath, FontSet fontSet)
+        {
+            if (fontSet.Metrics == null) return;
+
+            var pngNode = node.Children
+                .FirstOrDefault(kvp => kvp.Key.Equals("spritesheet.png", StringComparison.OrdinalIgnoreCase))
+                .Value;
+
+            if (pngNode != null && !string.IsNullOrEmpty(pngNode.SpriteSheetPath))
+            {
+                var variationImage = LoadImageFromResource(pngNode.SpriteSheetPath);
+                if (variationImage != null)
+                {
+                    fontSet.Variations[currentPath] = variationImage;
+                    var precutCache = new Dictionary<int, Image<Rgba32>>();
+
+                    foreach (var fontChar in fontSet.Metrics.Characters.Values)
+                    {
+                        if (fontChar.Source.Width > 0 && fontChar.Source.Height > 0)
+                        {
+                            var sourceRect = new Rectangle(0, 0, variationImage.Width, variationImage.Height);
+                            if (sourceRect.Contains(fontChar.Source))
+                            {
+                                precutCache[fontChar.Id] = variationImage.Clone(ctx => ctx.Crop(fontChar.Source));
+                            }
+                        }
+                    }
+                    fontSet.PrecutGlyphs[currentPath] = precutCache;
+                }
+            }
+
+            foreach (var child in node.Children.Values.Where(n => !n.Name.StartsWith("spritesheet.")))
+            {
+                string newPath = string.IsNullOrEmpty(currentPath) ? child.Name : $"{currentPath}.{child.Name}";
+                LoadFontVariationsRecursive(child, newPath, fontSet);
+            }
+        }
+
+        private StyleDefinition GetOrCreateStyle(string name)
+        {
+            if (!_styles.TryGetValue(name, out var style))
+            {
+                style = new StyleDefinition(name);
+                _styles[name] = style;
+            }
+            return style;
+        }
+
+        private ThemeDefinition GetOrCreateTheme(StyleDefinition styleDef, string name)
+        {
+            if (!styleDef.Themes.TryGetValue(name, out var theme))
+            {
+                theme = new ThemeDefinition(name);
+                styleDef.Themes[name] = theme;
+            }
+            return theme;
+        }
+
+        private FontDefinition GetOrCreateFont(string name)
+        {
+            if (!_fonts.TryGetValue(name, out var font))
+            {
+                font = new FontDefinition(name);
+                _fonts[name] = font;
+            }
+            return font;
+        }
+
+        private FontSizeDefinition GetOrCreateFontSize(FontDefinition fontDef, string sizeKey)
+        {
+            if (!fontDef.Sizes.TryGetValue(sizeKey, out var sizeDef))
+            {
+                sizeDef = new FontSizeDefinition(sizeKey);
+                fontDef.Sizes[sizeKey] = sizeDef;
+            }
+            return sizeDef;
+        }
+
+        private Image<Rgba32>? LoadImageFromResource(string resourcePath)
+        {
+            if (_imageCache.TryGetValue(resourcePath, out var cachedImage))
+            {
+                return cachedImage;
+            }
+
+            if (_assetsAssembly == null) return null;
+
+            using var stream = _assetsAssembly.GetManifestResourceStream(resourcePath);
+            if (stream == null) return null;
+
+            var image = Image.Load<Rgba32>(stream);
+            _imageCache[resourcePath] = image;
+            return image;
+        }
+
+        private BitmapFont? LoadMetricsFromResource(string resourcePath)
+        {
+            if (_fontMetricsCache.TryGetValue(resourcePath, out var cachedMetrics))
+            {
+                return cachedMetrics;
+            }
+
+            if (_assetsAssembly == null) return null;
+
+            using var stream = _assetsAssembly.GetManifestResourceStream(resourcePath);
+            if (stream == null) return null;
+
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            var xmlContent = reader.ReadToEnd();
+            var metrics = BitmapFont.FromXml(xmlContent);
+            _fontMetricsCache[resourcePath] = metrics;
+            return metrics;
+        }
+
+        #endregion
+    }
+}

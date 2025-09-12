@@ -1,0 +1,48 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36414.22
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Winerr.NET.Core", "Winerr.NET.Core\Winerr.NET.Core.csproj", "{FA3B6480-0198-4103-9202-4BBF22165872}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Winerr.NET.Assets", "Winerr.NET.Assets\Winerr.NET.Assets.csproj", "{EF42970B-9092-4654-9094-A17A01B1DB45}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Winerr.NET.Cli", "Winerr.NET.Cli\Winerr.NET.Cli.csproj", "{ED711AB1-229D-4341-BB62-4E6C51B5359C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Winerr.NET.AssetGenerator", "Winerr.NET.AssetGenerator\Winerr.NET.AssetGenerator.csproj", "{05703F9F-C04B-44F6-ADC6-9B87A5434EE4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Winerr.NET.IconProcessor", "Winerr.NET.IconProcessor\Winerr.NET.IconProcessor.csproj", "{9C2480E8-9A44-4100-9AB4-57B4508BE030}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FA3B6480-0198-4103-9202-4BBF22165872}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA3B6480-0198-4103-9202-4BBF22165872}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA3B6480-0198-4103-9202-4BBF22165872}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA3B6480-0198-4103-9202-4BBF22165872}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF42970B-9092-4654-9094-A17A01B1DB45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF42970B-9092-4654-9094-A17A01B1DB45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF42970B-9092-4654-9094-A17A01B1DB45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF42970B-9092-4654-9094-A17A01B1DB45}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED711AB1-229D-4341-BB62-4E6C51B5359C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED711AB1-229D-4341-BB62-4E6C51B5359C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED711AB1-229D-4341-BB62-4E6C51B5359C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED711AB1-229D-4341-BB62-4E6C51B5359C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05703F9F-C04B-44F6-ADC6-9B87A5434EE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05703F9F-C04B-44F6-ADC6-9B87A5434EE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05703F9F-C04B-44F6-ADC6-9B87A5434EE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05703F9F-C04B-44F6-ADC6-9B87A5434EE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C2480E8-9A44-4100-9AB4-57B4508BE030}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C2480E8-9A44-4100-9AB4-57B4508BE030}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C2480E8-9A44-4100-9AB4-57B4508BE030}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C2480E8-9A44-4100-9AB4-57B4508BE030}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3F4FA598-DA42-476C-8EBD-65196BFF7544}
+	EndGlobalSection
+EndGlobal

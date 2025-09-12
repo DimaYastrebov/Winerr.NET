@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Title>Winerr.NET Core Library</Title>
+
+		<AssemblyVersion>0</AssemblyVersion>
+		<Major>0</Major>
+		<Minor>9</Minor>
+		<Patch>7</Patch>
+		<BuildNumber>371</BuildNumber>
+		<VersionSuffix></VersionSuffix>
+
+		<FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>
+		<Version>$(Major).$(Minor).$(Patch)</Version>
+		<InformationalVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)$(VersionSuffix)</InformationalVersion>
+
+		<Authors>DimaYastrebov</Authors>
+		<Copyright>Copyright (c) DimaYastrebov 2025</Copyright>
+		<Product>Winerr.NET Core Library</Product>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
+		<PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Winerr.NET.Assets\Winerr.NET.Assets.csproj" />
+	</ItemGroup>
+
+</Project>

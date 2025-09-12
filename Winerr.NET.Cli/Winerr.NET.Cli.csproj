@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Title>Winerr.NET CLI</Title>
+
+		<AssemblyVersion>0</AssemblyVersion>
+		<Major>0</Major>
+		<Minor>4</Minor>
+		<Patch>8</Patch>
+		<BuildNumber>124</BuildNumber>
+		<VersionSuffix></VersionSuffix>
+
+		<FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>
+		<Version>$(Major).$(Minor).$(Patch)</Version>
+		<InformationalVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)$(VersionSuffix)</InformationalVersion>
+
+		<Authors>DimaYastrebov</Authors>
+		<Copyright>Copyright (c) DimaYastrebov 2025</Copyright>
+		<Product>Winerr.NET Command-Line Tool</Product>
+		<ApplicationIcon>favicon.ico</ApplicationIcon>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Content Include="favicon.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CommandLineParser" Version="2.9.1" />
+		<PackageReference Include="System.Text.Json" Version="9.0.8" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Winerr.NET.Core\Winerr.NET.Core.csproj" />
+	</ItemGroup>
+
+</Project>
