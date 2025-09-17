@@ -20,5 +20,9 @@ Log/
 
 copy.ps1
 copy.bat
+publish.ps1
+publish.bat
+
+_release
 
 PublishProfiles/
