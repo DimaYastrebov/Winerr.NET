@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using Winerr.NET.Core.Enums;
 
 namespace Winerr.NET.Cli

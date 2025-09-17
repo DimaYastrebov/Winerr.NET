@@ -1,4 +1,4 @@
-﻿
+
 using ImageMagick;
 var processingFolder = @"G:\projects\Winerr.NET\Winerr.NET.Assets\Styles\win7_aero\Icons";
 

@@ -9,8 +9,8 @@
 		<AssemblyVersion>0</AssemblyVersion>
 		<Major>0</Major>
 		<Minor>9</Minor>
-		<Patch>8</Patch>
-		<BuildNumber>389</BuildNumber>
+		<Patch>9</Patch>
+		<BuildNumber>394</BuildNumber>
 		<VersionSuffix></VersionSuffix>
 
 		<FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>

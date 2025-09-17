@@ -1,4 +1,4 @@
-﻿namespace Winerr.NET.Core.Models.Styles
+namespace Winerr.NET.Core.Models.Styles
 {
     public class ButtonMetrics
     {

@@ -1,4 +1,4 @@
-﻿namespace Winerr.NET.Core.Enums
+namespace Winerr.NET.Core.Enums
 {
     public enum CrossAlignmentAnchor
     {

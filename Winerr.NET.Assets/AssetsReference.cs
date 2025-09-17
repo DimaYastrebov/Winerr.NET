@@ -1,4 +1,4 @@
-﻿namespace Winerr.NET.Assets
+namespace Winerr.NET.Assets
 {
     public static class AssetsReference
     {

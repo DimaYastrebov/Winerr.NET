@@ -1,4 +1,4 @@
-﻿namespace Winerr.NET.Core.Models.Assets
+namespace Winerr.NET.Core.Models.Assets
 {
     public class ThemeDefinition
     {

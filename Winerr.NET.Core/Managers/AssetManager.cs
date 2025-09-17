@@ -1,9 +1,9 @@
-﻿using SharpCompress.Archives;
+using SharpCompress.Archives;
 using SharpCompress.Archives.SevenZip;
-using SharpCompress.Common;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text;
 using Winerr.NET.Core.Enums;
@@ -20,9 +20,9 @@ namespace Winerr.NET.Core.Managers
         private readonly Dictionary<string, StyleDefinition> _styles = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, FontDefinition> _fonts = new(StringComparer.OrdinalIgnoreCase);
 
-        private readonly Dictionary<string, Image<Rgba32>> _imageCache = new(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, BitmapFont> _fontMetricsCache = new(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, FontSet> _fontSetCache = new(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, Image<Rgba32>> _imageCache = new(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, BitmapFont> _fontMetricsCache = new(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, FontSet> _fontSetCache = new(StringComparer.OrdinalIgnoreCase);
 
         private readonly Dictionary<string, (SevenZipArchive Archive, Stream Stream)> _openArchives = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Dictionary<int, IArchiveEntry>> _iconIndex = new(StringComparer.OrdinalIgnoreCase);
@@ -144,6 +144,41 @@ namespace Winerr.NET.Core.Managers
             return resourcePath != null ? LoadImageFromResource(resourcePath) : null;
         }
 
+        public Dictionary<int, Image<Rgba32>> GetAllIconsForStyle(string styleName)
+        {
+            if (!_iconIndex.TryGetValue(styleName, out var iconDict))
+            {
+                return new Dictionary<int, Image<Rgba32>>();
+            }
+
+            var result = new Dictionary<int, Image<Rgba32>>();
+            foreach (var kvp in iconDict)
+            {
+                var iconId = kvp.Key;
+                var iconEntry = kvp.Value;
+
+                string cacheKey = $"icon_{styleName}_{iconId}";
+
+                if (_imageCache.TryGetValue(cacheKey, out var cachedImage))
+                {
+                    result[iconId] = cachedImage;
+                }
+                else
+                {
+                    using var entryStream = iconEntry.OpenEntryStream();
+                    using var memoryStream = new MemoryStream();
+                    entryStream.CopyTo(memoryStream);
+                    memoryStream.Position = 0;
+
+                    var image = Image.Load<Rgba32>(memoryStream);
+                    _imageCache[cacheKey] = image;
+                    result[iconId] = image;
+                }
+            }
+
+            return result;
+        }
+
         public Stream? GetResourceStream(string fullResourceName)
         {
             if (_assetsAssembly == null)
@@ -185,6 +220,15 @@ namespace Winerr.NET.Core.Managers
                 }
                 _iconIndex[styleName] = iconDict;
             }
+        }
+
+        public int GetMaxIconIdForStyle(string styleName)
+        {
+            if (_iconIndex.TryGetValue(styleName, out var iconDict))
+            {
+                return iconDict.Keys.Any() ? iconDict.Keys.Max() : -1;
+            }
+            return -1;
         }
 
         private void ParseAndBuildAssetTree(string[] resourceNames)
@@ -505,6 +549,29 @@ namespace Winerr.NET.Core.Managers
                 image.Dispose();
             }
             _imageCache.Clear();
+
+            foreach (var fontSet in _fontSetCache.Values)
+            {
+                if (fontSet != null)
+                {
+                    foreach (var variationImage in fontSet.Variations.Values)
+                    {
+                        variationImage?.Dispose();
+                    }
+                }
+
+                if (fontSet?.PrecutGlyphs != null)
+                {
+                    foreach (var precutDict in fontSet.PrecutGlyphs.Values)
+                    {
+                        foreach (var glyphImage in precutDict.Values)
+                        {
+                            glyphImage?.Dispose();
+                        }
+                    }
+                }
+            }
+            _fontSetCache.Clear();
 
             _disposed = true;
             GC.SuppressFinalize(this);

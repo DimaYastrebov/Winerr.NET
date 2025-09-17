@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+
+		<Title>Winerr.NET Web Server</Title>
+		<AssemblyVersion>0</AssemblyVersion>
+		<Major>0</Major>
+		<Minor>4</Minor>
+		<Patch>0</Patch>
+		<BuildNumber>72</BuildNumber>
+		<VersionSuffix></VersionSuffix>
+		
+		<FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>
+		<Version>$(Major).$(Minor).$(Patch)</Version>
+		<InformationalVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)$(VersionSuffix)</InformationalVersion>
+		<Authors>DimaYastrebov</Authors>
+		<Copyright>Copyright (c) DimaYastrebov 2025</Copyright>
+		<Product>Winerr.NET Web Server</Product>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.19" />
+		<PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.1-dev-00953" />
+		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+		<PackageReference Include="YamlDotNet" Version="16.3.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Winerr.NET.Core\Winerr.NET.Core.csproj" />
+	</ItemGroup>
+</Project>

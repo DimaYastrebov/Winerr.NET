@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Winerr.NET.Core.Enums;
 using Winerr.NET.Core.Models.Fonts;
 
@@ -27,7 +27,8 @@ namespace Winerr.NET.Core.Renderers
                         string truncated = TruncateTextToWidth(singleLineText, maxWidth - ellipsisWidth);
                         lines.Add(truncated + "...");
                     }
-                    else                    {
+                    else
+                    {
                         lines.Add(TruncateTextToWidth(singleLineText, maxWidth));
                     }
                 }

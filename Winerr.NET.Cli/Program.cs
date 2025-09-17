@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using CommandLine.Text;
 using SharpCompress.Archives.SevenZip;
 using SixLabors.ImageSharp;
@@ -6,7 +6,8 @@ using SixLabors.ImageSharp.PixelFormats;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
-using System.Text.RegularExpressions;using Winerr.NET.Core.Configs;
+using System.Text.RegularExpressions;
+using Winerr.NET.Core.Configs;
 using Winerr.NET.Core.Enums;
 using Winerr.NET.Core.Managers;
 using Winerr.NET.Core.Renderers;

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Winerr.NET.Core.Enums;
 
 namespace Winerr.NET.Core.Configs

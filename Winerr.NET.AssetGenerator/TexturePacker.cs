@@ -1,4 +1,4 @@
-﻿namespace Winerr.NET.AssetGenerator
+namespace Winerr.NET.AssetGenerator
 {
     public static class TexturePacker
     {

@@ -1,4 +1,4 @@
-﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System.Diagnostics;
@@ -18,7 +18,7 @@ namespace Winerr.NET.Core.Renderers
             IEnumerable<ButtonConfig> buttons,
             SystemStyle style,
             ButtonAlignment alignment,
-            int? totalWidth = null,            bool sort = true)
+            int? totalWidth = null, bool sort = true)
         {
             var stopwatch = Stopwatch.StartNew();
             var am = AssetManager.Instance;

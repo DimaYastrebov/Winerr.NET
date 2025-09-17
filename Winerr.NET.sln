@@ -1,4 +1,5 @@
-﻿Microsoft Visual Studio Solution File, Format Version 12.00
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36414.22
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -11,6 +12,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Winerr.NET.AssetGenerator", "Winerr.NET.AssetGenerator\Winerr.NET.AssetGenerator.csproj", "{05703F9F-C04B-44F6-ADC6-9B87A5434EE4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Winerr.NET.IconProcessor", "Winerr.NET.IconProcessor\Winerr.NET.IconProcessor.csproj", "{9C2480E8-9A44-4100-9AB4-57B4508BE030}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Winerr.NET.WebServer", "Winerr.NET.WebServer\Winerr.NET.WebServer.csproj", "{A3F2F829-E86E-41B5-849B-3F4A8E517377}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,6 +41,10 @@ Global
 		{9C2480E8-9A44-4100-9AB4-57B4508BE030}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9C2480E8-9A44-4100-9AB4-57B4508BE030}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9C2480E8-9A44-4100-9AB4-57B4508BE030}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3F2F829-E86E-41B5-849B-3F4A8E517377}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3F2F829-E86E-41B5-849B-3F4A8E517377}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3F2F829-E86E-41B5-849B-3F4A8E517377}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3F2F829-E86E-41B5-849B-3F4A8E517377}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

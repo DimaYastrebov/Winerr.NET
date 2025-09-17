@@ -1,4 +1,4 @@
-﻿using Winerr.NET.Core.Models.Fonts;
+using Winerr.NET.Core.Models.Fonts;
 
 namespace Winerr.NET.AssetGenerator
 {

@@ -1,4 +1,4 @@
-﻿public enum FramePartRenderMode
+public enum FramePartRenderMode
 {
     Stretch,
     Tile

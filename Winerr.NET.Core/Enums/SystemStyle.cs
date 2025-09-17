@@ -1,4 +1,4 @@
-﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp;
 using System.Reflection;
 using Winerr.NET.Core.Models.Styles;
 
