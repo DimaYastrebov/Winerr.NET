@@ -1,6 +1,6 @@
-# Winerr.NET
-
-> A powerful and accurate OS error window generator built with .NET.
+<p align="center">
+  <img src="https://cdn.yastre.top/icons/Winerr.NET%20Github%20Banner_v7.png" alt="Winerr.NET Preview">
+</p>
 
 To get started, go to the [Releases page](https://github.com/DimaYastrebov/Winerr.NET/releases) and download the application archive for your system's architecture (e.g., `win-x64`, `win-x86`). Unpack it and use your terminal to work with `Winerr.NET.Cli.exe`.
 Note that `-Plus` versions in the releases already include the .NET runtime, in case you don't want to install it manually.
