@@ -8,11 +8,9 @@
 		<UseWindowsForms>true</UseWindowsForms>
 		<Title>Winerr.NET Asset Generator</Title>
 
-		<AssemblyVersion>0</AssemblyVersion>
 		<Major>0</Major>
 		<Minor>7</Minor>
 		<Patch>0</Patch>
-		<BuildNumber>210</BuildNumber>
 		<VersionSuffix></VersionSuffix>
 
 		<FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>

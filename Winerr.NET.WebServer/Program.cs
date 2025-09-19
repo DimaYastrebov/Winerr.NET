@@ -67,6 +67,8 @@ builder.Services.AddResponseCompression(options => { options.EnableForHttps = tr
 builder.Services.AddMemoryCache();
 
 Winerr.NET.Core.Managers.AssetManager.Instance.LoadAssets();
+builder.Services.AddSingleton(Winerr.NET.Core.Managers.AssetManager.Instance);
+
 logger.Information("Assets loaded successfully.");
 
 var app = builder.Build();
@@ -105,5 +107,7 @@ app.MapStyleEndpoints();
 app.MapImageEndpoints();
 app.MapIconEndpoints();
 app.MapHealthEndpoints();
+app.MapAssetEndpoints();
+app.MapFontEndpoints();
 
 app.Run();

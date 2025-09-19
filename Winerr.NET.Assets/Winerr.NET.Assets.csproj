@@ -6,11 +6,9 @@
 		<Nullable>enable</Nullable>
 		<Title>Winerr.NET Assets Library</Title>
 
-		<AssemblyVersion>0</AssemblyVersion>
 		<Major>0</Major>
 		<Minor>7</Minor>
 		<Patch>0</Patch>
-		<BuildNumber>184</BuildNumber>
 		<VersionSuffix></VersionSuffix>
 
 		<FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>

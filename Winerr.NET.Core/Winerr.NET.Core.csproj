@@ -4,13 +4,11 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+        
 		<Title>Winerr.NET Core Library</Title>
-
-		<AssemblyVersion>0</AssemblyVersion>
 		<Major>0</Major>
-		<Minor>9</Minor>
-		<Patch>9</Patch>
-		<BuildNumber>394</BuildNumber>
+		<Minor>11</Minor>
+		<Patch>0</Patch>
 		<VersionSuffix></VersionSuffix>
 
 		<FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>

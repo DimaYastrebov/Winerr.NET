@@ -1,14 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Title>Winerr.NET IconProcessor</Title>
 
-  <ItemGroup>
-    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.8.1" />
-  </ItemGroup>
+        <Major>0</Major>
+        <Minor>1</Minor>
+        <Patch>0</Patch>
+        <VersionSuffix></VersionSuffix>
+
+        <FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>
+        <Version>$(Major).$(Minor).$(Patch)</Version>
+        <InformationalVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)$(VersionSuffix)</InformationalVersion>
+
+        <Authors>DimaYastrebov</Authors>
+        <Copyright>Copyright (c) DimaYastrebov 2025</Copyright>
+        <Product>Winerr.NET IconProcessor</Product>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.8.1" />
+    </ItemGroup>
 
 </Project>

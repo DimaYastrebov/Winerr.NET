@@ -12,6 +12,9 @@ using Winerr.NET.Core.Models.Fonts;
 
 namespace Winerr.NET.Core.Managers
 {
+    public record FontInfoDto(string Name, Dictionary<string, FontSizeInfoDto> Sizes);
+    public record FontSizeInfoDto(List<string> Variations);
+
     public sealed class AssetManager : IDisposable
     {
         private static readonly Lazy<AssetManager> _lazyInstance = new(() => new AssetManager());
@@ -529,6 +532,92 @@ namespace Winerr.NET.Core.Managers
             var metrics = BitmapFont.FromXml(xmlContent);
             _fontMetricsCache[resourcePath] = metrics;
             return metrics;
+        }
+
+        public Dictionary<string, Dictionary<string, string>> GetStyleAssetPaths(SystemStyle style)
+        {
+            var assetPaths = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+            if (!_styles.TryGetValue(style.Id.Split('_')[0], out var styleDef))
+            {
+                return assetPaths;
+            }
+
+            var frameParts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var buttons = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var btn in styleDef.GlobalButtonPaths)
+            {
+                buttons[btn.Key] = btn.Value;
+            }
+
+            if (styleDef.Themes.TryGetValue(style.Id.Split('_').Length > 1 ? style.Id.Split('_')[1] : "default", out var themeDef))
+            {
+                foreach (var part in themeDef.FramePartPaths)
+                {
+                    frameParts[part.Key] = part.Value;
+                }
+                foreach (var btn in themeDef.ButtonPaths)
+                {
+                    buttons[btn.Key] = btn.Value;
+                }
+            }
+
+            var buttonAreaPath = FindResourcePath(style, "button_area", (theme, key) => theme.FramePartPaths.GetValueOrDefault(key), (s, k) => null);
+            if (buttonAreaPath != null)
+            {
+                frameParts["button_area"] = buttonAreaPath;
+            }
+
+            var middleCenterPath = FindResourcePath(style, "middle_center", (theme, key) => theme.FramePartPaths.GetValueOrDefault(key), (s, k) => null);
+            if (middleCenterPath != null)
+            {
+                frameParts["middle_center"] = middleCenterPath;
+            }
+
+
+            assetPaths["frame_parts"] = frameParts;
+            assetPaths["buttons"] = buttons;
+
+            return assetPaths;
+        }
+
+        public List<FontInfoDto> GetFontInfo()
+        {
+            var fontInfoList = new List<FontInfoDto>();
+
+            foreach (var fontDef in _fonts.Values)
+            {
+                var sizesDict = new Dictionary<string, FontSizeInfoDto>();
+                foreach (var sizeDef in fontDef.Sizes.Values)
+                {
+                    var variations = new List<string>();
+                    CollectVariationPaths(sizeDef.VariationRoot, "", variations);
+                    sizesDict[sizeDef.SizeKey] = new FontSizeInfoDto(variations.Distinct().OrderBy(v => v).ToList());
+                }
+                fontInfoList.Add(new FontInfoDto(fontDef.Name, sizesDict));
+            }
+
+            return fontInfoList;
+        }
+
+        private void CollectVariationPaths(FontVariationNode node, string currentPath, List<string> paths)
+        {
+            if (node.Children.Any(c => c.Key.Equals("spritesheet.png", StringComparison.OrdinalIgnoreCase)))
+            {
+                var cleanPath = currentPath.StartsWith("root.") ? currentPath.Substring(5) : currentPath;
+                if (!string.IsNullOrEmpty(cleanPath))
+                {
+                    paths.Add(cleanPath);
+                }
+            }
+
+            foreach (var child in node.Children.Values)
+            {
+                if (child.Name.StartsWith("spritesheet.")) continue;
+
+                string newPath = string.IsNullOrEmpty(currentPath) ? child.Name : $"{currentPath}.{child.Name}";
+                CollectVariationPaths(child, newPath, paths);
+            }
         }
 
         public void Dispose()

@@ -7,11 +7,9 @@
 		<Nullable>enable</Nullable>
 		<Title>Winerr.NET CLI</Title>
 
-		<AssemblyVersion>0</AssemblyVersion>
 		<Major>0</Major>
 		<Minor>4</Minor>
 		<Patch>8</Patch>
-		<BuildNumber>124</BuildNumber>
 		<VersionSuffix></VersionSuffix>
 
 		<FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>

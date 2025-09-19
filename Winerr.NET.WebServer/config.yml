@@ -1,0 +1,39 @@
+# =========================================
+# Winerr.NET WebServer Configuration
+# =========================================
+
+server:
+  # The URL on which the server will run.
+  # 'localhost' - accessible only from this computer.
+  # '0.0.0.0' - accessible from all network interfaces (for example, by IP in the local network).
+  url: http://localhost:5000
+
+ipFilter:
+  # Enables or disables the IP filter.
+  # true - enabled, false - disabled.
+  enabled: false
+
+  # Filter mode:
+  # Blacklist - block IPs from the list below.
+  # Whitelist - allow access ONLY to IPs from the list below.
+  mode: Blacklist
+
+  # List of IP addresses for the filter.
+  ipList:
+    # - 192.168.1.115 
+    # - 127.0.0.1
+
+  # HTTP response code for blocked IPs.
+  blockResponseCode: 403
+
+  # Message for blocked IPs.
+  blockResponseMessage: Access denied by IP filter.
+
+authentication:
+  # Enables API key authentication.
+  # If true, all requests must include a valid API key.
+  enabled: false
+
+  # The secret API key.
+  # Send it via 'Authorization: Bearer <key>' header or '?api_key=<key>' query parameter.
+  apiKey: change-this-secret-key-in-production

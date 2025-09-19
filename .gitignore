@@ -23,6 +23,12 @@ copy.bat
 publish.ps1
 publish.bat
 
+logs
+
 _release
 
 PublishProfiles/
+
+version.txt
+
+Directory.Build.targets
