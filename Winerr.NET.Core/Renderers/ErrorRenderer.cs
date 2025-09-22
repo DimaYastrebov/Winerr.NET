@@ -31,7 +31,8 @@ namespace Winerr.NET.Core.Renderers
                 config.Buttons,
                 style,
                 config.ButtonAlignment,
-                totalWidth: null
+                totalWidth: null,
+                sort: config.SortButtons
             );
 
             int finalContentWidth = Math.Max(initialContentResult.Image.Width, initialButtonAreaResult.Image.Width);

@@ -31,4 +31,8 @@ PublishProfiles/
 
 version.txt
 
-Directory.Build.targets
+.next
+
+node_modules
+
+GlobalSuppressions.cs

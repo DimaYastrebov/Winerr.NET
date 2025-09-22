@@ -45,6 +45,9 @@ namespace Winerr.NET.WebServer.Endpoints
 
         [JsonPropertyName("is_cross_enabled")]
         public bool? IsCrossEnabled { get; init; }
+
+        [JsonPropertyName("sort_buttons")]
+        public bool? SortButtons { get; init; }
     }
 
     public record ButtonRequest(
@@ -216,6 +219,7 @@ namespace Winerr.NET.WebServer.Endpoints
                 MaxWidth = request.MaxWidth,
                 IsCrossEnabled = request.IsCrossEnabled ?? true,
                 ButtonAlignment = Enum.TryParse<ButtonAlignment>(request.ButtonAlignment, true, out var align) ? align : ButtonAlignment.Right,
+                SortButtons = request.SortButtons ?? true,
                 Buttons = request.Buttons?.Select(b => new ButtonConfig
                 {
                     Text = b.Text,

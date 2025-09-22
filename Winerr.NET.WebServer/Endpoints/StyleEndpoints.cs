@@ -45,6 +45,9 @@ namespace Winerr.NET.WebServer.Endpoints
         [JsonPropertyName("button_sort_order")]
         public IEnumerable<string> ButtonSortOrder { get; init; } = Enumerable.Empty<string>();
 
+        [JsonPropertyName("supported_button_types")]
+        public IEnumerable<string> SupportedButtonTypes { get; init; } = Enumerable.Empty<string>();
+
         [JsonPropertyName("buttons_padding_left")]
         public int ButtonsPaddingLeft { get; init; }
 
@@ -101,6 +104,7 @@ namespace Winerr.NET.WebServer.Endpoints
                             ButtonHeight = metrics.ButtonHeight,
                             ButtonSpacing = metrics.ButtonSpacing,
                             ButtonSortOrder = metrics.ButtonSortOrder.Select(bt => bt.DisplayName),
+                            SupportedButtonTypes = metrics.ButtonTypeMetrics.Keys.Select(bt => bt.DisplayName),
                             ButtonsPaddingLeft = metrics.ButtonsPaddingLeft,
                             ButtonsPaddingRight = metrics.ButtonsPaddingRight,
                             LineSpacing = metrics.LineSpacing

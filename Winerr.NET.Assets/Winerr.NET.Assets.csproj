@@ -9,7 +9,8 @@
 		<Major>0</Major>
 		<Minor>7</Minor>
 		<Patch>0</Patch>
-		<VersionSuffix></VersionSuffix>
+        <BuildNumber>184</BuildNumber>
+        <VersionSuffix></VersionSuffix>
 
 		<FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>
 		<Version>$(Major).$(Minor).$(Patch)</Version>

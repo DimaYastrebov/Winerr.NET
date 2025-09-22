@@ -25,7 +25,7 @@ namespace Winerr.NET.Core.Renderers
             var metrics = style.Metrics;
             var buttonRenderer = new ButtonRenderer();
 
-            var validButtons = buttons.Where(b => b != null && !string.IsNullOrEmpty(b.Text)).ToList();
+            var validButtons = buttons.Where(b => b != null).ToList();
 
             if (!validButtons.Any())
             {

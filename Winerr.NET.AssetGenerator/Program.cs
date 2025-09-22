@@ -158,6 +158,18 @@ namespace Winerr.NET.AssetGenerator
                     TextContrastMultiplier = 1.1f,
                     SourceXmlResourceName = "Winerr.NET.Assets.Fonts.Segoe_UI.spritesheet.xml"
                 },
+                new()
+                {
+                    OutputFolderName = "SegoeUI_Emoji_Test",
+                    FontName = "Segoe UI Emoji",
+                    FontSize = 8,
+                    FontStyle = FontStyle.Regular,
+                    UseClearType = false,
+                    TextColor = SixLabors.ImageSharp.Color.Black, 
+                    BackgroundColor = SixLabors.ImageSharp.Color.Transparent,
+                    ApplyContrastEnhancement = false,
+                    SourceXmlResourceName = "Winerr.NET.Assets.Fonts.Segoe_UI.spritesheet.xml"
+                },
             };
 
             var baseOutputDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "MsgBoxFont");

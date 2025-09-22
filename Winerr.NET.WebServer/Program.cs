@@ -66,6 +66,17 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddResponseCompression(options => { options.EnableForHttps = true; });
 builder.Services.AddMemoryCache();
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
+
 Winerr.NET.Core.Managers.AssetManager.Instance.LoadAssets();
 builder.Services.AddSingleton(Winerr.NET.Core.Managers.AssetManager.Instance);
 
@@ -94,6 +105,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseResponseCompression();
+app.UseCors();
 
 app.Use((context, next) =>
 {

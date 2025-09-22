@@ -21,6 +21,8 @@ namespace Winerr.NET.Core.Configs
 
         public bool IsCrossEnabled { get; set; }
 
+        public bool SortButtons { get; set; }
+
         public ErrorConfig()
         {
             SystemStyle = SystemStyle.Windows7Aero;

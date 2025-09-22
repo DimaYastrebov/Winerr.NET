@@ -17,3 +17,21 @@
 -   `Winerr.NET.WebServer`: v0.5.0
 -   `Winerr.NET.Cli`: v0.4.8
 -   `Winerr.NET.Assets`: v0.7.0
+
+## [1.0.0] - 2025-09-22
+
+### Added
+
+-   Implemented a full-featured WebUI for visual image creation, including single/batch modes, config import/export, and a button constructor with manual drag-n-drop sorting (available when auto-sort is disabled).
+-   Added a WebServer with an API to support the WebUI: image generation, fetching details on styles, icons, and assets.
+
+### Changed
+
+-   The health check endpoint was moved from `/health` to `/v1/health` for API consistency.
+
+### Components
+
+-   `Winerr.NET.Core`: v0.11.3.427
+-   `Winerr.NET.WebServer`: v0.5.1.86
+-   `Winerr.NET.Cli`: v0.4.8.135
+-   `Winerr.NET.Assets`: v0.7.0.184

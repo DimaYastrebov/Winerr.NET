@@ -8,7 +8,7 @@ namespace Winerr.NET.WebServer.Endpoints
     {
         public static IEndpointRouteBuilder MapHealthEndpoints(this IEndpointRouteBuilder app)
         {
-            app.MapGet("/health", (AssetManager am) =>
+            app.MapGet("/v1/health", (AssetManager am) =>
             {
                 var stopwatch = Stopwatch.StartNew();
 
