@@ -49,3 +49,16 @@
 -   `Winerr.NET.WebServer`: v0.5.1.86
 -   `Winerr.NET.Cli`: v0.4.8.135
 -   `Winerr.NET.Assets`: v0.7.0.184
+
+## [1.0.2] - 2025-09-25
+
+### Fixed
+
+-   Fixed a critical issue in the WebUI that caused an infinite loop of API requests when updating component state, leading to excessive network traffic and potential browser crashes.
+
+### Components
+
+-   `Winerr.NET.Core`: v0.11.3.428
+-   `Winerr.NET.WebServer`: v0.5.1.86
+-   `Winerr.NET.Cli`: v0.4.8.135
+-   `Winerr.NET.Assets`: v0.7.0.184

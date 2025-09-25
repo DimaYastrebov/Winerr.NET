@@ -166,7 +166,7 @@ const Home = () => {
         if (isLoading) return;
         if (styleIdsKey.split(',').every((id: string) => !id)) return;
         fetchAllDetails(errorInstances);
-    }, [styleIdsKey, isLoading, fetchAllDetails, errorInstances]);
+    }, [styleIdsKey, isLoading, fetchAllDetails]);
 
     const handleReload = () => {
         window.location.reload();
