@@ -190,7 +190,10 @@ namespace Winerr.NET.Core.Renderers
                 char c = text[i];
                 if (TryGetCharacter(c, out var fontChar))
                 {
-                    totalWidth += fontChar.XAdvance;
+                    if (fontChar != null)
+                    {
+                        totalWidth += fontChar.XAdvance;
+                    }
                     if (i < text.Length - 1) totalWidth += _font.GetKerning(c, text[i + 1]);
                 }
             }

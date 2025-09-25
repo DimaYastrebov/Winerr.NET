@@ -55,7 +55,7 @@ export const IconPickerDialog: React.FC<IconPickerDialogProps> = ({ isOpen, onOp
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-3xl h-[80vh] bg-zinc-900 border-zinc-800 flex flex-col">
                 <DialogHeader>
-                    <DialogTitle>Select an Icon for '{styleId}'</DialogTitle>
+                    <DialogTitle>Select an Icon for &apos;{styleId}&apos;</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 overflow-hidden">
                     <ScrollArea className="h-full pr-4">

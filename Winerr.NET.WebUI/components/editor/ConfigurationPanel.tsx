@@ -63,7 +63,7 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
         const instance = errorInstances.find(i => i.id === instanceId);
         if (!instance) return;
         const existingIndex = instance.config.buttons.findIndex(b => b.id === buttonData.id);
-        let newButtons = [...instance.config.buttons];
+        const newButtons = [...instance.config.buttons];
         if (existingIndex > -1) newButtons[existingIndex] = buttonData;
         else newButtons.push(buttonData);
         updateInstance(instanceId, { buttons: newButtons });

@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { ButtonAlignment, ErrorConfig } from "@/app/page";
-import { SortableButton } from "./ButtonConstructor";
+import { SortableButton, ButtonConfig } from "./ButtonConstructor";
 import { FormField } from "./FormField";
 import { Combobox, ComboboxOption } from "@/components/ui/combobox";
 import { InfoPopover } from "./InfoPopover";
@@ -27,7 +27,7 @@ interface ErrorInstanceProps {
     onConfigChange: (newConfig: Partial<ErrorConfig['config']>) => void;
     onOpenIconPicker: () => void;
     onAddNewButton: () => void;
-    onEditButton: (button: any) => void;
+    onEditButton: (button: ButtonConfig) => void;
     onDeleteButton: (buttonId: string) => void;
     onDragEnd: (event: DragEndEvent) => void;
 }

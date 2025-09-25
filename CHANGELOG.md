@@ -35,3 +35,17 @@
 -   `Winerr.NET.WebServer`: v0.5.1.86
 -   `Winerr.NET.Cli`: v0.4.8.135
 -   `Winerr.NET.Assets`: v0.7.0.184
+
+## [1.0.1] - 2025-09-25
+
+### Fixed
+
+-   Fixed numerous TypeScript and ESLint errors in the WebUI that were causing the production build (`npm run build`) to fail.
+-   Resolved a potential null reference warning during text measurement in the Core library.
+
+### Components
+
+-   `Winerr.NET.Core`: v0.11.3.428
+-   `Winerr.NET.WebServer`: v0.5.1.86
+-   `Winerr.NET.Cli`: v0.4.8.135
+-   `Winerr.NET.Assets`: v0.7.0.184

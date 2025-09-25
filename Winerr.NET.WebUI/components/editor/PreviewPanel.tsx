@@ -25,9 +25,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ imageUrl, isGenerati
 
         if (imageUrl && mode === 'single') {
             return (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                     src={imageUrl}
-                    alt="Generated error window"
+                    alt="Generated error window preview"
                     className="max-w-full max-h-full object-contain"
                 />
             );

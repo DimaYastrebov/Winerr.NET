@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useId, useCallback } from "react";
+import React, { useEffect, useState, useId, useCallback, useMemo } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
 import { type DragEndEvent } from "@dnd-kit/core";
 import { toast } from "sonner";
@@ -11,7 +11,6 @@ import { PreviewPanel } from "@/components/editor/PreviewPanel";
 import { useBreakpoint } from "@/hooks/use-breakpoint";
 import { ButtonConfig } from "@/components/editor/ButtonConstructor";
 import { ServerDownOverlay } from "../components/editor/ServerDownOverlay";
-
 interface SystemStyle { id: string; display_name: string; }
 export type ButtonAlignment = 'Auto' | 'Left' | 'Center' | 'Right';
 export type ArchiveFormat = 'zip' | 'tar';
@@ -37,11 +36,36 @@ export interface ErrorConfig {
     };
 }
 
+interface GenerateRequestBody {
+    style_id: string;
+    title: string;
+    content: string;
+    icon_id: number;
+    is_cross_enabled: boolean;
+    sort_buttons: boolean;
+    buttons: Omit<ButtonConfig, 'id'>[];
+    button_alignment?: ButtonAlignment;
+    max_width?: number;
+}
+
+interface StyleDetailsData {
+    max_icon_id: number;
+    metrics: {
+        supported_button_types: string[];
+    };
+}
+
+interface ImportedInstance {
+    id: string;
+    name: string;
+    config: Partial<ErrorInstanceConfig>;
+}
+
 const Home = () => {
     const isMobile = useBreakpoint(850);
     const stableId = useId();
 
-    const createNewErrorInstance = (name: string, styleId: string): ErrorConfig => ({
+    const createNewErrorInstance = useCallback((name: string, styleId: string): ErrorConfig => ({
         id: `${stableId}-${Math.random().toString(36).slice(2)}`,
         name: name,
         config: {
@@ -57,7 +81,7 @@ const Home = () => {
             isButtonSortEnabled: true,
             maxWidth: ""
         }
-    });
+    }), [stableId]);
 
     const [isServerDown, setIsServerDown] = useState(false);
     const [styles, setStyles] = useState<SystemStyle[]>([]);
@@ -70,15 +94,16 @@ const Home = () => {
     const [errorInstances, setErrorInstances] = useState<ErrorConfig[]>([]);
     const [batchSettings, setBatchSettings] = useState({ format: 'zip' as ArchiveFormat, compression: 6 });
 
+    const styleIdsKey = useMemo(() => {
+        return errorInstances.map(i => i.config.styleId).join(',');
+    }, [errorInstances]);
+
     const fetchAllDetails = useCallback(async (instances: ErrorConfig[]) => {
-        if (instances.length === 0) {
-            return;
-        }
+        if (instances.length === 0) return;
 
         setIsDetailsLoading(true);
-
         const uniqueStyleIds = [...new Set(instances.map(i => i.config.styleId).filter(Boolean))];
-        const detailsCache = new Map<string, any>();
+        const detailsCache = new Map<string, StyleDetailsData>();
 
         await Promise.all(uniqueStyleIds.map(async (styleId) => {
             try {
@@ -109,13 +134,12 @@ const Home = () => {
             });
             return updatedInstances;
         });
-
         setIsDetailsLoading(false);
     }, []);
 
     useEffect(() => {
         setErrorInstances([createNewErrorInstance("Default Error", "")]);
-    }, [stableId]);
+    }, [stableId, createNewErrorInstance]);
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -139,13 +163,10 @@ const Home = () => {
     }, []);
 
     useEffect(() => {
-        if (isLoading) {
-            return;
-        }
-
+        if (isLoading) return;
+        if (styleIdsKey.split(',').every((id: string) => !id)) return;
         fetchAllDetails(errorInstances);
-
-    }, [errorInstances.map(i => i.config.styleId).join(), isLoading, fetchAllDetails]);
+    }, [styleIdsKey, isLoading, fetchAllDetails, errorInstances]);
 
     const handleReload = () => {
         window.location.reload();
@@ -204,38 +225,31 @@ const Home = () => {
         setIsGenerating(true);
         setGeneratedImageUrl(null);
         setGeneratedImageBlob(null);
-
         try {
             if (mode === 'single' && errorInstances[0]) {
                 const { config } = errorInstances[0];
-                const requestBody: any = {
+                const requestBody: GenerateRequestBody = {
                     style_id: config.styleId, title: config.title, content: config.content,
                     icon_id: parseInt(config.iconId, 10) || 0, is_cross_enabled: config.isCrossEnabled,
                     sort_buttons: config.isButtonSortEnabled, buttons: config.buttons.map(({ id, ...rest }) => rest),
                 };
-
                 if (config.buttonAlignment !== 'Auto') requestBody.button_alignment = config.buttonAlignment;
                 if (config.maxWidth && !isNaN(parseInt(config.maxWidth, 10))) requestBody.max_width = parseInt(config.maxWidth, 10);
-
                 const response = await fetch("/v1/images/generate", {
                     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody),
                 });
-
                 if (!response.ok) throw new Error(`Generation failed: ${response.statusText}`);
-
                 const imageBlob = await response.blob();
                 setGeneratedImageBlob(imageBlob);
                 setGeneratedImageUrl(URL.createObjectURL(imageBlob));
-
             } else {
                 const batchRequests = errorInstances.map(instance => {
                     const { config } = instance;
-                    const requestBody: any = {
+                    const requestBody: GenerateRequestBody = {
                         style_id: config.styleId, title: config.title, content: config.content,
                         icon_id: parseInt(config.iconId, 10) || 0, is_cross_enabled: config.isCrossEnabled,
-                        sort_buttons: config.isButtonSortEnabled, buttons: config.buttons.map(({ id, ...rest }) => rest),
+                        sort_buttons: config.isButtonSortEnabled, buttons: config.buttons.map(({ id: _id, ...rest }) => rest),
                     };
-
                     if (config.buttonAlignment !== 'Auto') requestBody.button_alignment = config.buttonAlignment;
                     if (config.maxWidth && !isNaN(parseInt(config.maxWidth, 10))) requestBody.max_width = parseInt(config.maxWidth, 10);
                     return requestBody;
@@ -244,7 +258,6 @@ const Home = () => {
                     method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ requests: batchRequests, archive_format: batchSettings.format, compression_level: batchSettings.compression }),
                 });
-
                 if (!response.ok) throw new Error(`Batch generation failed: ${response.statusText}`);
                 const archiveBlob = await response.blob();
                 const url = URL.createObjectURL(archiveBlob);
@@ -323,18 +336,15 @@ const Home = () => {
                     const importedData = JSON.parse(content);
                     if (Array.isArray(importedData.instances)) {
                         const styleId = styles.length > 0 ? styles[0].id : "";
-                        const validatedInstances = importedData.instances.map((item: any) => ({
+                        const validatedInstances = importedData.instances.map((item: ImportedInstance) => ({
                             ...createNewErrorInstance(item.name || "Imported Error", item.config?.styleId || styleId),
                             ...item,
                         }));
-
                         setErrorInstances(validatedInstances);
                         fetchAllDetails(validatedInstances);
-
                         if (importedData.batchSettings) {
                             setBatchSettings(importedData.batchSettings);
                         }
-
                         if (validatedInstances.length > 1) {
                             setMode('batch');
                         } else {
