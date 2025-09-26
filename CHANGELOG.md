@@ -75,7 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implemented the Command-Line Interface (CLI) for generating images from the terminal.
 - Added `list-styles` command to view all available styles.
 
-## [[0.9.8.389]](https://github.com/DimaYastrebov/Winerr.NET/releases/tag/v0.9.8.389) - 2025-09-12
+## [[0.9.8.389]](https://github.com/DimaYastrebov/Winerr.NET/releases/tag/0.9.8.389) - 2025-09-12
 
 ### Added
-- Initial public release of the `Winerr.NET.Core` rendering library.
+- Initial public release of the `Winerr.NET.Core` rendering library and CLI.
