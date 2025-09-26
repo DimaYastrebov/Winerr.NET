@@ -67,6 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [[0.10.1]](https://github.com/DimaYastrebov/Winerr.NET/releases/tag/v0.10.1) - 2025-09-18
 [Compare with v0.10.0](https://github.com/DimaYastrebov/Winerr.NET/compare/v0.10.0...v0.10.1)
 
+- Added `Winerr.NET.WebServer` ([WebAPI](https://github.com/DimaYastrebov/Winerr.NET/issues/1)), a web server for working with Winerr.NET over the network, without using the terminal.
 
 ## [[0.10.0]](https://github.com/DimaYastrebov/Winerr.NET/releases/tag/v0.10.0) - 2025-09-18
 [Compare with v0.9.8.389](https://github.com/DimaYastrebov/Winerr.NET/compare/v0.9.8.389...v0.10.0)
