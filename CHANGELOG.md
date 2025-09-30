@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [[1.1.0]](https://github.com/DimaYastrebov/Winerr.NET/releases/tag/v1.1.0) - 2025-09-30
+[Compare with v1.0.2](https://github.com/DimaYastrebov/Winerr.NET/compare/v1.0.2...v1.1.0)
+
+### Added
+- **WebUI:** Implemented drag-and-drop functionality for reordering error instances in batch mode.
+- **WebUI:** Added instance numbering in the batch mode UI for better navigation.
+- **WebUI:** The generation time is now displayed in the preview panel after a successful single image generation.
+- **WebServer:** Batch-generated archives now include a `metadata.json` file containing generation time and source configuration for each image.
+
+### Changed
+- **Core:** Refactored the rendering pipeline to a two-phase process (measure then draw), eliminating redundant rendering operations and improving performance.
+- **Core:** Replaced hardcoded asset name strings with a centralized `AssetKeys` static class to improve code maintainability and prevent typos.
+- **WebServer:** Image files within batch archives are now named sequentially (e.g., `0.png`, `1.png`) instead of `image_0.png`.
+
+### Fixed
+- **WebUI:** Fixed a bug where dragging an error instance in batch mode would cause the UI layout to shift due to horizontal overflow.
+- **WebUI/WebServer:** Corrected inconsistent naming in the `X-Usage-Details` API header (`GenerationTimeMs` was incorrectly using snake_case initially), ensuring proper **PascalCase** deserialization on the frontend.
+
+### Components
+- `Winerr.NET.Core`: v0.12.0.446
+- `Winerr.NET.WebServer`: v0.5.2.93
+- `Winerr.NET.Cli`: v0.4.8.135
+- `Winerr.NET.Assets`: v0.7.0.184
+
 ## [[1.0.2]](https://github.com/DimaYastrebov/Winerr.NET/releases/tag/v1.0.2) - 2025-09-25
 [Compare with v1.0.1](https://github.com/DimaYastrebov/Winerr.NET/compare/v1.0.1...v1.0.2)
 

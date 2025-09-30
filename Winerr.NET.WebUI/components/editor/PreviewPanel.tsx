@@ -1,15 +1,16 @@
 "use client";
 
 import React from "react";
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle, Timer } from "lucide-react";
 
 interface PreviewPanelProps {
     imageUrl: string | null;
     isGenerating: boolean;
     mode: 'single' | 'batch';
+    generationTime: number | null;
 }
 
-export const PreviewPanel: React.FC<PreviewPanelProps> = ({ imageUrl, isGenerating, mode }) => {
+export const PreviewPanel: React.FC<PreviewPanelProps> = ({ imageUrl, isGenerating, mode, generationTime }) => {
 
     const renderContent = () => {
         if (isGenerating) {
@@ -42,8 +43,15 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ imageUrl, isGenerati
     };
 
     return (
-        <div className="h-full flex items-center justify-center bg-zinc-950 p-8">
+        <div className="relative h-full flex items-center justify-center bg-zinc-950 p-8">
             {renderContent()}
+
+            {generationTime !== null && mode === 'single' && !isGenerating && (
+                <div className="absolute top-4 left-4 bg-black/60 text-white text-sm px-3 py-1.5 rounded-lg flex items-center gap-2 backdrop-blur-md border border-white/10 shadow-lg">
+                    <Timer className="h-4 w-4 text-zinc-300" />
+                    <span className="font-medium text-zinc-100">{generationTime}ms</span>
+                </div>
+            )}
         </div>
     );
 };

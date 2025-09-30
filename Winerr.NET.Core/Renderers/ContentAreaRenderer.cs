@@ -19,13 +19,47 @@ namespace Winerr.NET.Core.Renderers
             )
         );
 
+        public Size MeasureContentArea()
+        {
+            var metrics = style.Metrics;
+            var fontSet = style.Metrics.TextFontSet;
+
+            if (fontSet?.Metrics == null)
+            {
+                throw new InvalidOperationException($"Font metrics not found for style '{style.DisplayName}'.");
+            }
+
+            var iconSize = metrics.ExpectedIconSize;
+
+            int? maxTextWidth = null;
+            if (maxWidth.HasValue)
+            {
+                maxTextWidth = maxWidth.Value - metrics.IconPaddingLeft - iconSize.Width - metrics.IconPaddingRight - metrics.TextPaddingRight;
+            }
+
+            var textWrapper = new TextWrapper(fontSet.Metrics);
+            var lines = textWrapper.Wrap(text, maxTextWidth ?? int.MaxValue, wrapMode, truncationMode);
+
+            int textWidth = lines.Any() ? lines.Max(line => textWrapper.MeasureTextWidth(line)) : 0;
+            int textHeight = lines.Count * fontSet.Metrics.LineHeight;
+
+            int naturalContentWidth = metrics.IconPaddingLeft + iconSize.Width + metrics.IconPaddingRight + textWidth + metrics.TextPaddingRight;
+
+            int iconBottom = metrics.IconPaddingTop + iconSize.Height;
+            int textBottom = metrics.TextPaddingTop + textHeight;
+            int requiredContentHeight = Math.Max(iconBottom, textBottom) + metrics.TextPaddingBottom;
+            int finalHeight = Math.Max(requiredContentHeight, metrics.MinContentHeight);
+
+            return new Size(naturalContentWidth, finalHeight);
+        }
+
         public ContentAreaRenderResult DrawContentArea(int? forcedWidth = null)
         {
             var stopwatch = Stopwatch.StartNew();
             var am = AssetManager.Instance;
             var metrics = style.Metrics;
 
-            var iconResult = _iconRenderer.Value.DrawIcon(iconId, style, ignoreMissing: true, shrinkMode: IconShrinkMode.Exact);
+            using var iconResult = _iconRenderer.Value.DrawIcon(iconId, style, ignoreMissing: true, shrinkMode: IconShrinkMode.Exact);
             Size iconSize = iconResult.Image.Size;
 
             int iconPaddingLeft = metrics.IconPaddingLeft;
@@ -40,8 +74,12 @@ namespace Winerr.NET.Core.Renderers
             {
                 maxTextWidth = maxWidth.Value - iconPaddingLeft - iconSize.Width - iconPaddingRight - textPaddingRight;
             }
+            else if (forcedWidth.HasValue)
+            {
+                maxTextWidth = forcedWidth.Value - iconPaddingLeft - iconSize.Width - iconPaddingRight - textPaddingRight;
+            }
 
-            var textResult = _textRenderer.Value.DrawText(
+            using var textResult = _textRenderer.Value.DrawText(
                 text: text,
                 maxWidth: maxTextWidth,
                 variationName: metrics.TextFontVariation,
@@ -60,8 +98,8 @@ namespace Winerr.NET.Core.Renderers
 
             var finalImage = new Image<Rgba32>(finalWidth, finalHeight);
 
-            var assets = AssetLoader.LoadRequiredImages(style, am.GetStyleImage, "middle_center");
-            var backgroundTile = assets["middle_center"];
+            var assets = AssetLoader.LoadRequiredImages(style, am.GetStyleImage, AssetKeys.FrameParts.MiddleCenter);
+            var backgroundTile = assets[AssetKeys.FrameParts.MiddleCenter];
             finalImage.Mutate(ctx =>
             {
                 for (int y = 0; y < finalHeight; y += backgroundTile.Height)

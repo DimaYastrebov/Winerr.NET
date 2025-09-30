@@ -18,8 +18,8 @@ Log/
 
 .vs
 
-copy.ps1
 copy.bat
+copy_small.bat
 publish.ps1
 publish.bat
 

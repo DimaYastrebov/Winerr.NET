@@ -1,17 +1,19 @@
 using SixLabors.ImageSharp;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using SharpCompress.Common;
+using SharpCompress.Compressors.Deflate;
+using SharpCompress.Writers;
+using SharpCompress.Writers.Tar;
+using SharpCompress.Writers.Zip;
 using Winerr.NET.Core.Configs;
 using Winerr.NET.Core.Enums;
 using Winerr.NET.Core.Renderers;
 using Winerr.NET.WebServer.Helpers;
 using Winerr.NET.WebServer.Models;
-using SharpCompress.Writers;
-using SharpCompress.Common;
-using SharpCompress.Writers.Zip;
-using SharpCompress.Compressors.Deflate;
-using SharpCompress.Writers.Tar;
 
 namespace Winerr.NET.WebServer.Endpoints
 {
@@ -68,8 +70,29 @@ namespace Winerr.NET.WebServer.Endpoints
         [JsonPropertyName("requests")]
         public List<GenerateImageRequest> Requests { get; init; } = new();
     }
-    public record ImageGenerationUsage(long TotalRequestTimeMs, long GenerationTimeMs, int ImageWidth, int ImageHeight, long ImageSizeBytes)
-        : ApiUsage(TotalRequestTimeMs);
+
+    public record ImageGenerationUsage : ApiUsage
+    {
+        public long GenerationTimeMs { get; init; }
+        public int ImageWidth { get; init; }
+        public int ImageHeight { get; init; }
+        public long ImageSizeBytes { get; init; }
+
+        public ImageGenerationUsage(long totalRequestTimeMs, long generationTimeMs, int imageWidth, int imageHeight, long imageSizeBytes)
+            : base(totalRequestTimeMs)
+        {
+            GenerationTimeMs = generationTimeMs;
+            ImageWidth = imageWidth;
+            ImageHeight = imageHeight;
+            ImageSizeBytes = imageSizeBytes;
+        }
+    }
+
+    public record BatchMetadataEntry(
+        [property: JsonPropertyName("file_name")] string FileName,
+        [property: JsonPropertyName("generation_time_ms")] long GenerationTimeMs,
+        [property: JsonPropertyName("source_request")] GenerateImageRequest SourceRequest
+    );
 
     public static class ImageEndpoints
     {
@@ -101,15 +124,18 @@ namespace Winerr.NET.WebServer.Endpoints
 
                 totalStopwatch.Stop();
 
+                logger.LogInformation("Single image generated in {GenerationTime}ms (Total request: {TotalTime}ms)",
+                    generationStopwatch.ElapsedMilliseconds, totalStopwatch.ElapsedMilliseconds);
+
                 var usage = new ImageGenerationUsage(
-                    TotalRequestTimeMs: totalStopwatch.ElapsedMilliseconds,
-                    GenerationTimeMs: generationStopwatch.ElapsedMilliseconds,
-                    ImageWidth: image.Width,
-                    ImageHeight: image.Height,
-                    ImageSizeBytes: memoryStream.Length
+                    totalRequestTimeMs: totalStopwatch.ElapsedMilliseconds,
+                    generationTimeMs: generationStopwatch.ElapsedMilliseconds,
+                    imageWidth: image.Width,
+                    imageHeight: image.Height,
+                    imageSizeBytes: memoryStream.Length
                 );
 
-                httpContext.Response.Headers.Append("X-Usage-Details", System.Text.Json.JsonSerializer.Serialize(usage));
+                httpContext.Response.Headers.Append("X-Usage-Details", JsonSerializer.Serialize(usage));
 
                 return Results.File(imageBytes, "image/png", "error.png");
             })
@@ -122,16 +148,17 @@ namespace Winerr.NET.WebServer.Endpoints
                 ILogger<ImageApi> logger,
                 HttpContext httpContext) =>
             {
-                var stopwatch = Stopwatch.StartNew();
+                var totalStopwatch = Stopwatch.StartNew();
 
                 if (batchRequest.Requests == null || !batchRequest.Requests.Any())
                 {
-                    var errorResponse = ApiResponseFactory.CreateError("bad_request", "The 'requests' array cannot be null or empty.", stopwatch);
+                    var errorResponse = ApiResponseFactory.CreateError("bad_request", "The 'requests' array cannot be null or empty.", totalStopwatch);
                     return Results.BadRequest(errorResponse);
                 }
 
                 var archiveStream = new MemoryStream();
                 var format = batchRequest.ArchiveFormat.ToLowerInvariant();
+                var metadata = new List<BatchMetadataEntry>();
 
                 try
                 {
@@ -144,30 +171,45 @@ namespace Winerr.NET.WebServer.Endpoints
                             if (config == null) continue;
 
                             var renderer = new ErrorRenderer();
+
+                            var generationStopwatch = Stopwatch.StartNew();
                             using var image = renderer.Generate(config);
+                            generationStopwatch.Stop();
+
                             using var imageStream = new MemoryStream();
                             await image.SaveAsPngAsync(imageStream);
                             imageStream.Position = 0;
 
-                            writer.Write($"image_{i}.png", imageStream);
+                            string entryFileName = $"{i}.png";
+                            writer.Write(entryFileName, imageStream);
+
+                            metadata.Add(new BatchMetadataEntry(entryFileName, generationStopwatch.ElapsedMilliseconds, request));
                         }
+
+                        var metadataJson = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
+                        using var metadataStream = new MemoryStream(Encoding.UTF8.GetBytes(metadataJson));
+                        writer.Write("metadata.json", metadataStream);
                     }
 
                     archiveStream.Position = 0;
                     var mimeType = format == "zip" ? "application/zip" : "application/x-tar";
-                    var fileName = $"batch_{DateTime.UtcNow:yyyyMMddHHmmss}.{format}";
+                    var archiveFileName = $"batch_{DateTime.UtcNow:yyyyMMddHHmmss}.{format}";
 
-                    return Results.File(archiveStream, mimeType, fileName);
+                    totalStopwatch.Stop();
+                    logger.LogInformation("Batch of {Count} images generated in {TotalTime}ms",
+                        batchRequest.Requests.Count, totalStopwatch.ElapsedMilliseconds);
+
+                    return Results.File(archiveStream, mimeType, archiveFileName);
                 }
                 catch (ArgumentException ex)
                 {
-                    var errorResponse = ApiResponseFactory.CreateError("bad_request", ex.Message, stopwatch);
+                    var errorResponse = ApiResponseFactory.CreateError("bad_request", ex.Message, totalStopwatch);
                     return Results.BadRequest(errorResponse);
                 }
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Error during batch image generation.");
-                    var errorResponse = ApiResponseFactory.CreateError("internal_server_error", "An unexpected error occurred during batch generation.", stopwatch);
+                    var errorResponse = ApiResponseFactory.CreateError("internal_server_error", "An unexpected error occurred during batch generation.", totalStopwatch);
                     return Results.Problem(errorResponse.Error?.Message);
                 }
             })

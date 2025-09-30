@@ -90,6 +90,7 @@ const Home = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
     const [generatedImageBlob, setGeneratedImageBlob] = useState<Blob | null>(null);
+    const [generationTime, setGenerationTime] = useState<number | null>(null);
     const [mode, setMode] = useState<'single' | 'batch'>('single');
     const [errorInstances, setErrorInstances] = useState<ErrorConfig[]>([]);
     const [batchSettings, setBatchSettings] = useState({ format: 'zip' as ArchiveFormat, compression: 6 });
@@ -208,15 +209,13 @@ const Home = () => {
         });
     };
 
-    const handleDragEnd = (instanceId: string, event: DragEndEvent) => {
+    const handleInstancesDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         if (over && active.id !== over.id) {
-            updateInstance(instanceId, currentConfig => {
-                const oldIndex = currentConfig.buttons.findIndex(b => b.id === active.id);
-                const newIndex = currentConfig.buttons.findIndex(b => b.id === over.id);
-                return {
-                    buttons: arrayMove(currentConfig.buttons, oldIndex, newIndex)
-                };
+            setErrorInstances((items) => {
+                const oldIndex = items.findIndex((item) => item.id === active.id);
+                const newIndex = items.findIndex((item) => item.id === over.id);
+                return arrayMove(items, oldIndex, newIndex);
             });
         }
     };
@@ -225,6 +224,7 @@ const Home = () => {
         setIsGenerating(true);
         setGeneratedImageUrl(null);
         setGeneratedImageBlob(null);
+        setGenerationTime(null);
         try {
             if (mode === 'single' && errorInstances[0]) {
                 const { config } = errorInstances[0];
@@ -235,10 +235,25 @@ const Home = () => {
                 };
                 if (config.buttonAlignment !== 'Auto') requestBody.button_alignment = config.buttonAlignment;
                 if (config.maxWidth && !isNaN(parseInt(config.maxWidth, 10))) requestBody.max_width = parseInt(config.maxWidth, 10);
+
                 const response = await fetch("/v1/images/generate", {
                     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody),
                 });
+
                 if (!response.ok) throw new Error(`Generation failed: ${response.statusText}`);
+
+                const usageHeader = response.headers.get("X-Usage-Details");
+                if (usageHeader) {
+                    try {
+                        const usageData = JSON.parse(usageHeader);
+                        const genTime = usageData.GenerationTimeMs;
+                        setGenerationTime(genTime);
+                        console.log(`Image generated in ${genTime}ms (Total request time: ${usageData.TotalRequestTimeMs}ms)`);
+                    } catch (e) {
+                        console.warn("Could not parse X-Usage-Details header.");
+                    }
+                }
+
                 const imageBlob = await response.blob();
                 setGeneratedImageBlob(imageBlob);
                 setGeneratedImageUrl(URL.createObjectURL(imageBlob));
@@ -372,15 +387,15 @@ const Home = () => {
                 <ResizablePanelGroup direction={isMobile ? "vertical" : "horizontal"} className="h-full w-full max-w-7xl mx-auto bg-zinc-900 rounded-xl shadow-lg border border-zinc-800">
                     {isMobile ? (
                         <>
-                            <ResizablePanel defaultSize={60}><PreviewPanel imageUrl={generatedImageUrl} isGenerating={isGenerating} mode={mode} /></ResizablePanel>
+                            <ResizablePanel defaultSize={60}><PreviewPanel imageUrl={generatedImageUrl} isGenerating={isGenerating} mode={mode} generationTime={generationTime} /></ResizablePanel>
                             <ResizableHandle withHandle />
-                            <ResizablePanel defaultSize={40} minSize={25} maxSize={80}><ConfigurationPanel styles={styles} isLoading={isLoading || isDetailsLoading} isGenerating={isGenerating} onGenerate={handleGenerate} onCopy={handleCopy} onDownload={handleDownload} isImageReady={!!generatedImageUrl} onExport={handleExport} onImport={handleImport} mode={mode} setMode={setMode} errorInstances={errorInstances} updateInstance={updateInstance} updateInstanceName={updateInstanceName} addInstance={addInstance} deleteInstance={deleteInstance} onDragEnd={handleDragEnd} batchSettings={batchSettings} setBatchSettings={setBatchSettings} /></ResizablePanel>
+                            <ResizablePanel defaultSize={40} minSize={25} maxSize={80}><ConfigurationPanel styles={styles} isLoading={isLoading || isDetailsLoading} isGenerating={isGenerating} onGenerate={handleGenerate} onCopy={handleCopy} onDownload={handleDownload} isImageReady={!!generatedImageUrl} onExport={handleExport} onImport={handleImport} mode={mode} setMode={setMode} errorInstances={errorInstances} updateInstance={updateInstance} updateInstanceName={updateInstanceName} addInstance={addInstance} deleteInstance={deleteInstance} onInstancesDragEnd={handleInstancesDragEnd} batchSettings={batchSettings} setBatchSettings={setBatchSettings} /></ResizablePanel>
                         </>
                     ) : (
                         <>
-                            <ResizablePanel defaultSize={27} minSize={25} maxSize={40}><ConfigurationPanel styles={styles} isLoading={isLoading || isDetailsLoading} isGenerating={isGenerating} onGenerate={handleGenerate} onCopy={handleCopy} onDownload={handleDownload} isImageReady={!!generatedImageUrl} onExport={handleExport} onImport={handleImport} mode={mode} setMode={setMode} errorInstances={errorInstances} updateInstance={updateInstance} updateInstanceName={updateInstanceName} addInstance={addInstance} deleteInstance={deleteInstance} onDragEnd={handleDragEnd} batchSettings={batchSettings} setBatchSettings={setBatchSettings} /></ResizablePanel>
+                            <ResizablePanel defaultSize={27} minSize={25} maxSize={40}><ConfigurationPanel styles={styles} isLoading={isLoading || isDetailsLoading} isGenerating={isGenerating} onGenerate={handleGenerate} onCopy={handleCopy} onDownload={handleDownload} isImageReady={!!generatedImageUrl} onExport={handleExport} onImport={handleImport} mode={mode} setMode={setMode} errorInstances={errorInstances} updateInstance={updateInstance} updateInstanceName={updateInstanceName} addInstance={addInstance} deleteInstance={deleteInstance} onInstancesDragEnd={handleInstancesDragEnd} batchSettings={batchSettings} setBatchSettings={setBatchSettings} /></ResizablePanel>
                             <ResizableHandle withHandle />
-                            <ResizablePanel defaultSize={73}><PreviewPanel imageUrl={generatedImageUrl} isGenerating={isGenerating} mode={mode} /></ResizablePanel>
+                            <ResizablePanel defaultSize={73}><PreviewPanel imageUrl={generatedImageUrl} isGenerating={isGenerating} mode={mode} generationTime={generationTime} /></ResizablePanel>
                         </>
                     )}
                 </ResizablePanelGroup>

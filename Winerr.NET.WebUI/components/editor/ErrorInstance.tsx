@@ -2,7 +2,7 @@
 
 import React from "react";
 import { DndContext, closestCenter, type DragEndEvent, PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { PlusCircle, Image as ImageIcon } from "lucide-react";
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -29,15 +29,23 @@ interface ErrorInstanceProps {
     onAddNewButton: () => void;
     onEditButton: (button: ButtonConfig) => void;
     onDeleteButton: (buttonId: string) => void;
-    onDragEnd: (event: DragEndEvent) => void;
 }
 
 export const ErrorInstance: React.FC<ErrorInstanceProps> = ({
     instance, styles, isLoading, onConfigChange, onOpenIconPicker,
-    onAddNewButton, onEditButton, onDeleteButton, onDragEnd
+    onAddNewButton, onEditButton, onDeleteButton
 }) => {
     const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
     const { config } = instance;
+
+    const handleButtonsDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (over && active.id !== over.id) {
+            const oldIndex = config.buttons.findIndex(b => b.id === active.id);
+            const newIndex = config.buttons.findIndex(b => b.id === over.id);
+            onConfigChange({ buttons: arrayMove(config.buttons, oldIndex, newIndex) });
+        }
+    };
 
     const handleDebouncedIconIdChange = (value: string) => {
         if (value === "") {
@@ -159,7 +167,7 @@ export const ErrorInstance: React.FC<ErrorInstanceProps> = ({
             <AccordionItem value="item-4">
                 <AccordionTrigger className="text-base font-semibold text-zinc-300">4. Button Constructor</AccordionTrigger>
                 <AccordionContent>
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleButtonsDragEnd}>
                         <div className="p-2 space-y-3">
                             <SortableContext items={config.buttons} strategy={verticalListSortingStrategy}>
                                 {config.buttons.length > 0 && (

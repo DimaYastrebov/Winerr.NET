@@ -27,26 +27,26 @@ namespace Winerr.NET.Core.Renderers
 
             var requiredParts = new List<string>
             {
-                "top_left", "top_center", "top_right",
-                "middle_left", "middle_right",
-                "bottom_left", "bottom_center", "bottom_right"
+                AssetKeys.FrameParts.TopLeft, AssetKeys.FrameParts.TopCenter, AssetKeys.FrameParts.TopRight,
+                AssetKeys.FrameParts.MiddleLeft, AssetKeys.FrameParts.MiddleRight,
+                AssetKeys.FrameParts.BottomLeft, AssetKeys.FrameParts.BottomCenter, AssetKeys.FrameParts.BottomRight
             };
 
             if (style.SystemInfo.IsCross)
             {
-                requiredParts.AddRange(new[] { "cross", "cross_disabled" });
+                requiredParts.AddRange(new[] { AssetKeys.FrameParts.Cross, AssetKeys.FrameParts.CrossDisabled });
             }
 
             var assets = AssetLoader.LoadRequiredImages(style, am.GetStyleImage, requiredParts.ToArray());
 
-            var middleLeft = assets["middle_left"];
-            var middleRight = assets["middle_right"];
-            var topCenter = assets["top_center"];
-            var bottomCenter = assets["bottom_center"];
-            var topLeft = assets["top_left"];
-            var topRight = assets["top_right"];
-            var bottomLeft = assets["bottom_left"];
-            var bottomRight = assets["bottom_right"];
+            var middleLeft = assets[AssetKeys.FrameParts.MiddleLeft];
+            var middleRight = assets[AssetKeys.FrameParts.MiddleRight];
+            var topCenter = assets[AssetKeys.FrameParts.TopCenter];
+            var bottomCenter = assets[AssetKeys.FrameParts.BottomCenter];
+            var topLeft = assets[AssetKeys.FrameParts.TopLeft];
+            var topRight = assets[AssetKeys.FrameParts.TopRight];
+            var bottomLeft = assets[AssetKeys.FrameParts.BottomLeft];
+            var bottomRight = assets[AssetKeys.FrameParts.BottomRight];
 
             int contentWidth = contentResult.Image.Width;
             int contentHeight = contentResult.Image.Height;
@@ -65,16 +65,16 @@ namespace Winerr.NET.Core.Renderers
                 ctx.DrawImage(bottomLeft, new Point(0, totalHeight - bottomLeft.Height), 1f);
                 ctx.DrawImage(bottomRight, new Point(totalWidth - bottomRight.Width, totalHeight - bottomRight.Height), 1f);
 
-                var topCenterMode = metrics.FramePartRenderModes.GetValueOrDefault("top_center", FramePartRenderMode.Stretch);
+                var topCenterMode = metrics.FramePartRenderModes.GetValueOrDefault(AssetKeys.FrameParts.TopCenter, FramePartRenderMode.Stretch);
                 int topCenterWidth = totalWidth - topLeft.Width - topRight.Width;
                 DrawPart(ctx, topCenter, topLeft.Width, 0, topCenterWidth, topCenter.Height, topCenterMode);
 
-                var bottomCenterMode = metrics.FramePartRenderModes.GetValueOrDefault("bottom_center", FramePartRenderMode.Stretch);
+                var bottomCenterMode = metrics.FramePartRenderModes.GetValueOrDefault(AssetKeys.FrameParts.BottomCenter, FramePartRenderMode.Stretch);
                 int bottomCenterWidth = totalWidth - bottomLeft.Width - bottomRight.Width;
                 DrawPart(ctx, bottomCenter, bottomLeft.Width, totalHeight - bottomCenter.Height, bottomCenterWidth, bottomCenter.Height, bottomCenterMode);
 
-                var middleLeftMode = metrics.FramePartRenderModes.GetValueOrDefault("middle_left", FramePartRenderMode.Stretch);
-                var middleRightMode = metrics.FramePartRenderModes.GetValueOrDefault("middle_right", FramePartRenderMode.Stretch);
+                var middleLeftMode = metrics.FramePartRenderModes.GetValueOrDefault(AssetKeys.FrameParts.MiddleLeft, FramePartRenderMode.Stretch);
+                var middleRightMode = metrics.FramePartRenderModes.GetValueOrDefault(AssetKeys.FrameParts.MiddleRight, FramePartRenderMode.Stretch);
                 int sideHeight = totalInnerHeight;
                 DrawPart(ctx, middleLeft, 0, topLeft.Height, middleLeft.Width, sideHeight - (topLeft.Height - topCenter.Height), middleLeftMode);
                 DrawPart(ctx, middleRight, totalWidth - topRight.Width, topRight.Height, middleRight.Width, sideHeight - (topRight.Height - topCenter.Height), middleRightMode);
@@ -82,7 +82,7 @@ namespace Winerr.NET.Core.Renderers
                 Image<Rgba32>? crossImage = null;
                 if (style.SystemInfo.IsCross)
                 {
-                    crossImage = isCrossActive ? assets["cross"] : assets["cross_disabled"];
+                    crossImage = isCrossActive ? assets[AssetKeys.FrameParts.Cross] : assets[AssetKeys.FrameParts.CrossDisabled];
                 }
 
                 if (!string.IsNullOrEmpty(title))
@@ -90,7 +90,7 @@ namespace Winerr.NET.Core.Renderers
                     int crossImageWidth = (crossImage != null) ? crossImage.Width : 0;
                     int maxTitleWidth = contentWidth - crossImageWidth - metrics.CrossPaddingLeft;
 
-                    var titleResult = _titleTextRenderer.Value.DrawText(
+                    using var titleResult = _titleTextRenderer.Value.DrawText(
                         title,
                         maxWidth: maxTitleWidth,
                         variationName: metrics.WindowTitleFontVariation,
@@ -151,14 +151,15 @@ namespace Winerr.NET.Core.Renderers
             {
                 case FramePartRenderMode.Tile:
                     var brush = new ImageBrush(source);
-
                     ctx.Fill(brush, new RectangleF(x, y, width, height));
                     break;
 
                 case FramePartRenderMode.Stretch:
                 default:
-                    var resized = source.Clone(c => c.Resize(width, height));
-                    ctx.DrawImage(resized, new Point(x, y), 1f);
+                    using (var resized = source.Clone(c => c.Resize(width, height)))
+                    {
+                        ctx.DrawImage(resized, new Point(x, y), 1f);
+                    }
                     break;
             }
         }

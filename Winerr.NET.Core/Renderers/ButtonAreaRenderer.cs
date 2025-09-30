@@ -14,6 +14,37 @@ namespace Winerr.NET.Core.Renderers
         public ButtonAreaRenderer()
         { }
 
+        public Size MeasureButtonArea(IEnumerable<ButtonConfig> buttons, SystemStyle style, bool sort = true)
+        {
+            var metrics = style.Metrics;
+            var buttonRenderer = new ButtonRenderer();
+
+            var validButtons = buttons.Where(b => b != null).ToList();
+
+            if (!validButtons.Any())
+            {
+                return new Size(0, 0);
+            }
+
+            if (sort)
+            {
+                validButtons = validButtons
+                    .OrderBy(b => style.Metrics.ButtonSortOrder.IndexOf(b.Type))
+                    .ToList();
+            }
+
+            int buttonsBlockWidth = validButtons.Sum(b => buttonRenderer.MeasureButtonWidth(b, style)) +
+                                    Math.Max(0, validButtons.Count - 1) * metrics.ButtonSpacing;
+
+            int totalWidth = metrics.ButtonsPaddingLeft + buttonsBlockWidth + metrics.ButtonsPaddingRight;
+
+            var am = AssetManager.Instance;
+            var backgroundTile = am.GetStyleImage(style, AssetKeys.FrameParts.ButtonArea);
+            int height = backgroundTile?.Height ?? metrics.ButtonHeight;
+
+            return new Size(totalWidth, height);
+        }
+
         public ButtonAreaRenderResult DrawButtonArea(
             IEnumerable<ButtonConfig> buttons,
             SystemStyle style,
@@ -44,7 +75,7 @@ namespace Winerr.NET.Core.Renderers
             int buttonsBlockWidth = renderedButtons.Sum(rb => rb.Image.Width) + Math.Max(0, renderedButtons.Count - 1) * metrics.ButtonSpacing;
             int finalWidth = totalWidth ?? (metrics.ButtonsPaddingLeft + buttonsBlockWidth + metrics.ButtonsPaddingRight);
 
-            var backgroundTile = am.GetStyleImage(style, "button_area");
+            var backgroundTile = am.GetStyleImage(style, AssetKeys.FrameParts.ButtonArea);
             if (backgroundTile == null)
             {
                 int maxHeightNoBg = renderedButtons.Any() ? renderedButtons.Max(rb => rb.Image.Height) : 1;
@@ -67,6 +98,7 @@ namespace Winerr.NET.Core.Renderers
                     }
                 });
 
+                renderedButtons.ForEach(b => b.Dispose());
                 stopwatch.Stop();
                 return new ButtonAreaRenderResult(containerImageNoBg, stopwatch.Elapsed);
             }
@@ -118,6 +150,7 @@ namespace Winerr.NET.Core.Renderers
                 }
             });
 
+            renderedButtons.ForEach(b => b.Dispose());
             stopwatch.Stop();
             return new ButtonAreaRenderResult(finalImage, stopwatch.Elapsed);
         }

@@ -16,6 +16,28 @@ namespace Winerr.NET.Core.Renderers
         public ButtonRenderer()
         { }
 
+        public int MeasureButtonWidth(ButtonConfig config, SystemStyle style)
+        {
+            var metrics = style.Metrics;
+
+            if (!metrics.ButtonTypeMetrics.TryGetValue(config.Type, out var buttonMetrics))
+            {
+                buttonMetrics = new ButtonMetrics { FontVariation = FontVariations.Black, HorizontalPadding = 0, VerticalTextOffset = 0 };
+            }
+
+            var fontSet = metrics.ButtonFontSet(buttonMetrics.FontVariation);
+            if (fontSet.Metrics == null)
+            {
+                throw new InvalidOperationException("Font metrics not loaded for button font set.");
+            }
+
+            var textWrapper = new TextWrapper(fontSet.Metrics);
+            int textWidth = textWrapper.MeasureTextWidth(config.Text);
+
+            var contentWidth = textWidth + buttonMetrics.HorizontalPadding * 2;
+            return Math.Max(contentWidth, metrics.MinButtonWidth);
+        }
+
         public ButtonRenderResult DrawButton(ButtonConfig config, SystemStyle style)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -33,7 +55,7 @@ namespace Winerr.NET.Core.Renderers
             }
 
             var textRenderer = new TextRenderer(fontSet);
-            var textResult = textRenderer.DrawText(
+            using var textResult = textRenderer.DrawText(
                 config.Text,
                 null,
                 buttonMetrics.FontVariation,
@@ -41,23 +63,43 @@ namespace Winerr.NET.Core.Renderers
                 truncationMode: TextTruncationMode.Ellipsis
             );
 
-            var contentWidth = textResult.Dimensions.Width + buttonMetrics.HorizontalPadding * 2;
-            var finalWidth = Math.Max(contentWidth, metrics.MinButtonWidth);
+            var finalWidth = MeasureButtonWidth(config, style);
             var buttonImage = new Image<Rgba32>(finalWidth, metrics.ButtonHeight);
 
             var am = AssetManager.Instance;
-            string buttonTypeName = config.Type.DisplayName.ToLower();
+
+            string leftKey, centerKey, rightKey;
+
+            if (config.Type == ButtonType.Recommended)
+            {
+                leftKey = AssetKeys.ButtonParts.RecommendedLeft;
+                centerKey = AssetKeys.ButtonParts.RecommendedCenter;
+                rightKey = AssetKeys.ButtonParts.RecommendedRight;
+            }
+            else if (config.Type == ButtonType.Disabled)
+            {
+                leftKey = AssetKeys.ButtonParts.DisabledLeft;
+                centerKey = AssetKeys.ButtonParts.DisabledCenter;
+                rightKey = AssetKeys.ButtonParts.DisabledRight;
+            }
+            else
+            {
+                leftKey = AssetKeys.ButtonParts.DefaultLeft;
+                centerKey = AssetKeys.ButtonParts.DefaultCenter;
+                rightKey = AssetKeys.ButtonParts.DefaultRight;
+            }
+
             var buttonAssets = AssetLoader.LoadRequiredImages(
                 style,
                 am.GetButtonImage,
-                $"{buttonTypeName}_left",
-                $"{buttonTypeName}_center",
-                $"{buttonTypeName}_right"
+                leftKey,
+                centerKey,
+                rightKey
             );
 
-            var left = buttonAssets[$"{buttonTypeName}_left"];
-            var center = buttonAssets[$"{buttonTypeName}_center"];
-            var right = buttonAssets[$"{buttonTypeName}_right"];
+            var left = buttonAssets[leftKey];
+            var center = buttonAssets[centerKey];
+            var right = buttonAssets[rightKey];
 
             buttonImage.Mutate(ctx =>
             {
@@ -66,7 +108,7 @@ namespace Winerr.NET.Core.Renderers
                 int centerWidth = finalWidth - left.Width - right.Width;
                 if (centerWidth > 0)
                 {
-                    var centerResized = center.Clone(c => c.Resize(centerWidth, metrics.ButtonHeight));
+                    using var centerResized = center.Clone(c => c.Resize(centerWidth, metrics.ButtonHeight));
                     ctx.DrawImage(centerResized, new Point(left.Width, 0), 1f);
                 }
 

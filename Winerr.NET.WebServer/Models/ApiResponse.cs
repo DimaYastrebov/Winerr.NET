@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json.Serialization;
 
 namespace Winerr.NET.WebServer.Models
@@ -19,6 +18,6 @@ namespace Winerr.NET.WebServer.Models
     );
 
     public record ApiUsage(
-        [property: JsonPropertyName("total_request_time_ms")] long TotalRequestTimeMs
+        long TotalRequestTimeMs
     );
 }
