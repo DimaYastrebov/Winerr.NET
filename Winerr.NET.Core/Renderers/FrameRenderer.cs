@@ -56,7 +56,7 @@ namespace Winerr.NET.Core.Renderers
             int totalWidth = middleLeft.Width + contentWidth + middleRight.Width;
             int totalHeight = topCenter.Height + totalInnerHeight + bottomCenter.Height;
 
-            var frameImage = new Image<Rgba32>(totalWidth, totalHeight);
+            var frameImage = new Image<Rgba32>(Math.Max(1, totalWidth), Math.Max(1, totalHeight));
 
             frameImage.Mutate(ctx =>
             {

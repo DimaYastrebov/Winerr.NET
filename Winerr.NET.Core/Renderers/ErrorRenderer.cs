@@ -2,7 +2,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using Winerr.NET.Core.Configs;
-using Winerr.NET.Core.Enums;
+using Winerr.NET.Core.Enums;    
 using Winerr.NET.Core.Interfaces;
 using Winerr.NET.Core.Managers;
 
@@ -34,6 +34,7 @@ namespace Winerr.NET.Core.Renderers
                 var leftBorder = am.GetStyleImage(style, AssetKeys.FrameParts.MiddleLeft) ?? throw new FileNotFoundException("middle_left sprite not found");
                 var rightBorder = am.GetStyleImage(style, AssetKeys.FrameParts.MiddleRight) ?? throw new FileNotFoundException("middle_right sprite not found");
                 int maxInnerWidth = config.MaxWidth.Value - leftBorder.Width - rightBorder.Width;
+                if (maxInnerWidth < 0) maxInnerWidth = 0;
                 finalContentWidth = Math.Min(finalContentWidth, maxInnerWidth);
             }
 

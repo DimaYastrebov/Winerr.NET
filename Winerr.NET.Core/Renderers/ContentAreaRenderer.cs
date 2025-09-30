@@ -31,11 +31,11 @@ namespace Winerr.NET.Core.Renderers
 
             var iconSize = metrics.ExpectedIconSize;
 
-            int? maxTextWidth = null;
-            if (maxWidth.HasValue)
-            {
-                maxTextWidth = maxWidth.Value - metrics.IconPaddingLeft - iconSize.Width - metrics.IconPaddingRight - metrics.TextPaddingRight;
-            }
+                int? maxTextWidth = null;
+                if (maxWidth.HasValue)
+                {
+                    maxTextWidth = maxWidth.Value - metrics.IconPaddingLeft - iconSize.Width - metrics.IconPaddingRight - metrics.TextPaddingRight;
+                }
 
             var textWrapper = new TextWrapper(fontSet.Metrics);
             var lines = textWrapper.Wrap(text, maxTextWidth ?? int.MaxValue, wrapMode, truncationMode);
@@ -70,13 +70,11 @@ namespace Winerr.NET.Core.Renderers
             int textPaddingBottom = metrics.TextPaddingBottom;
 
             int? maxTextWidth = null;
-            if (maxWidth.HasValue)
+            int widthSource = forcedWidth ?? maxWidth ?? 0;
+
+            if (widthSource > 0)
             {
-                maxTextWidth = maxWidth.Value - iconPaddingLeft - iconSize.Width - iconPaddingRight - textPaddingRight;
-            }
-            else if (forcedWidth.HasValue)
-            {
-                maxTextWidth = forcedWidth.Value - iconPaddingLeft - iconSize.Width - iconPaddingRight - textPaddingRight;
+                maxTextWidth = Math.Max(0, widthSource - iconPaddingLeft - iconSize.Width - iconPaddingRight - textPaddingRight);
             }
 
             using var textResult = _textRenderer.Value.DrawText(
@@ -96,7 +94,7 @@ namespace Winerr.NET.Core.Renderers
             int requiredContentHeight = Math.Max(iconBottom, textBottom) + textPaddingBottom;
             int finalHeight = Math.Max(requiredContentHeight, metrics.MinContentHeight);
 
-            var finalImage = new Image<Rgba32>(finalWidth, finalHeight);
+            var finalImage = new Image<Rgba32>(Math.Max(1, finalWidth), Math.Max(1, finalHeight));
 
             var assets = AssetLoader.LoadRequiredImages(style, am.GetStyleImage, AssetKeys.FrameParts.MiddleCenter);
             var backgroundTile = assets[AssetKeys.FrameParts.MiddleCenter];

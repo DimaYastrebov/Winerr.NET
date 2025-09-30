@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { LoaderCircle, Timer } from "lucide-react";
+import { LoaderCircle, Timer, Github } from "lucide-react";
+import { Button } from "../ui/button";
 
 interface PreviewPanelProps {
     imageUrl: string | null;
@@ -52,6 +53,13 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ imageUrl, isGenerati
                     <span className="font-medium text-zinc-100">{generationTime}ms</span>
                 </div>
             )}
+            
+            <a href="https://github.com/DimaYastrebov/Winerr.NET" target="_blank" rel="noopener noreferrer" aria-label="View on GitHub" className="absolute top-4 right-4">
+                <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-zinc-200">
+                    GitHub
+                    <Github className="h-4 w-4" />
+                </Button>
+            </a>
         </div>
     );
 };
