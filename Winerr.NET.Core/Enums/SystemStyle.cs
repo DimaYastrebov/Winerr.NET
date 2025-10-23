@@ -70,7 +70,7 @@ namespace Winerr.NET.Core.Enums
                     ButtonType.Disabled
                 },
 
-                CrossOffset = new Point(-36, -6),
+                CrossOffset = new Point(-36, -12),
                 CrossAlignmentAnchor = CrossAlignmentAnchor.TopRight,
                 CrossPaddingLeft = 6,
                 CrossPaddingRight = 0,
@@ -90,51 +90,48 @@ namespace Winerr.NET.Core.Enums
 
         public static readonly SystemStyle Windows7Architecture = new("Win7_Architecture", "Windows 7 (Architecture)",
             new SystemInfo(buttonCount: 3, isCross: true),
-            new StyleMetrics(Windows7Aero.Metrics)
-            {
-                CrossOffset = new Point(-36, -12),
-            },
+            new StyleMetrics(Windows7Aero.Metrics),
             Windows7Aero);
 
         public static readonly SystemStyle Windows7Landscapes = new("Win7_Landscapes", "Windows 7 (Landscapes)",
             new SystemInfo(buttonCount: 3, isCross: true),
-            new StyleMetrics(Windows7Architecture.Metrics),
-            Windows7Architecture);
+            new StyleMetrics(Windows7Aero.Metrics),
+            Windows7Aero);
 
         public static readonly SystemStyle Windows7Nature = new("Win7_Nature", "Windows 7 (Nature)",
             new SystemInfo(buttonCount: 3, isCross: true),
-            new StyleMetrics(Windows7Architecture.Metrics),
-            Windows7Architecture);
+            new StyleMetrics(Windows7Aero.Metrics),
+            Windows7Aero);
 
         public static readonly SystemStyle Windows7Scenes = new("Win7_Scenes", "Windows 7 (Scenes)",
             new SystemInfo(buttonCount: 3, isCross: true),
-            new StyleMetrics(Windows7Architecture.Metrics),
-            Windows7Architecture);
+            new StyleMetrics(Windows7Aero.Metrics),
+            Windows7Aero);
 
         public static readonly SystemStyle Windows7Ruby = new("Win7_Ruby", "Windows 7 (Ruby)",
             new SystemInfo(buttonCount: 3, isCross: true),
-            new StyleMetrics(Windows7Architecture.Metrics),
-            Windows7Architecture);
+            new StyleMetrics(Windows7Aero.Metrics),
+            Windows7Aero);
 
         public static readonly SystemStyle Windows7Gold = new("Win7_Gold", "Windows 7 (Gold)",
             new SystemInfo(buttonCount: 3, isCross: true),
-            new StyleMetrics(Windows7Architecture.Metrics),
-            Windows7Architecture);
+            new StyleMetrics(Windows7Aero.Metrics),
+            Windows7Aero);
 
         public static readonly SystemStyle Windows7Onyx = new("Win7_Onyx", "Windows 7 (Onyx)",
             new SystemInfo(buttonCount: 3, isCross: true),
-            new StyleMetrics(Windows7Architecture.Metrics),
-            Windows7Architecture);
+            new StyleMetrics(Windows7Aero.Metrics),
+            Windows7Aero);
 
         public static readonly SystemStyle Windows7Emerald = new("Win7_Emerald", "Windows 7 (Emerald)",
             new SystemInfo(buttonCount: 3, isCross: true),
-            new StyleMetrics(Windows7Architecture.Metrics),
-            Windows7Architecture);
+            new StyleMetrics(Windows7Aero.Metrics),
+            Windows7Aero);
 
         public static readonly SystemStyle Windows7Sea = new("Win7_Sea", "Windows 7 (Sea)",
             new SystemInfo(buttonCount: 3, isCross: true),
-            new StyleMetrics(Windows7Architecture.Metrics),
-            Windows7Architecture);
+            new StyleMetrics(Windows7Aero.Metrics),
+            Windows7Aero);
 
         public static readonly SystemStyle Windows7Basic = new("Win7_Basic", "Windows 7 (Basic)",
             new SystemInfo(buttonCount: 3, isCross: true),
