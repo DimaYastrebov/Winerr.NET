@@ -7,6 +7,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { XCircle, Anvil, PlusCircle, Trash2, ChevronDown, Upload, Download as DownloadIcon, Copy, GripVertical } from "lucide-react";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import { useEditorStore } from "@/stores/editor-store";
 import { useGenerateImage, useGenerateBatch, useGetStyleDetails } from "@/api/queries";
@@ -21,12 +22,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 
-import { ErrorConfig, ArchiveFormat, GenerateRequestBody } from "@/lib/types";
+import { ErrorConfig, ArchiveFormat, GenerateRequestBody, SystemStyle } from "@/lib/types";
 import { IconPickerDialog } from "./IconPickerDialog";
 import { ButtonDialog, ButtonConfig } from "./ButtonConstructor";
 import { ErrorInstance } from "./ErrorInstance";
-
-interface SystemStyle { id: string; display_name: string; }
 
 interface SortableInstanceItemProps {
     instance: ErrorConfig;
@@ -91,6 +90,7 @@ interface ConfigurationPanelProps {
 const ConfigurationPanelFC: React.FC<ConfigurationPanelProps> = ({
     styles, isLoading, onImport, importInputRef
 }) => {
+    const { t } = useTranslation();
     const {
         mode, setMode, errorInstances, batchSettings, setBatchSettings,
         updateInstance, updateInstanceName, addInstance,
@@ -98,8 +98,8 @@ const ConfigurationPanelFC: React.FC<ConfigurationPanelProps> = ({
         generatedImageBlob, generatedImageUrl
     } = useEditorStore();
 
-    const generateImageMutation = useGenerateImage();
-    const generateBatchMutation = useGenerateBatch();
+    const generateImageMutation = useGenerateImage(t);
+    const generateBatchMutation = useGenerateBatch(t);
     const isGenerating = generateImageMutation.isPending || generateBatchMutation.isPending;
 
     const [activeDialogs, setActiveDialogs] = useState({
@@ -178,21 +178,21 @@ const ConfigurationPanelFC: React.FC<ConfigurationPanelProps> = ({
 
     const handleCopy = useCallback(async () => {
         if (!generatedImageBlob) {
-            toast.error("Nothing to copy", { description: "Generate an image first." });
+            toast.error(t('toasts.copy_fail_title'), { description: t('toasts.copy_fail_desc') });
             return;
         }
         try {
             await navigator.clipboard.write([new ClipboardItem({ 'image/png': generatedImageBlob })]);
-            toast.success("Image copied to clipboard!");
+            toast.success(t('toasts.copy_success'));
         } catch (error) {
             console.error("Failed to copy image:", error);
-            toast.error("Copy failed", { description: "Your browser might not support this feature." });
+            toast.error(t('toasts.copy_unsupported_title'), { description: t('toasts.copy_unsupported_desc') });
         }
-    }, [generatedImageBlob]);
+    }, [generatedImageBlob, t]);
 
     const handleDownload = useCallback(() => {
         if (!generatedImageUrl) {
-            toast.error("Nothing to download", { description: "Generate an image first." });
+            toast.error(t('toasts.download_fail_title'), { description: t('toasts.download_fail_desc') });
             return;
         }
         const link = document.createElement('a');
@@ -201,7 +201,7 @@ const ConfigurationPanelFC: React.FC<ConfigurationPanelProps> = ({
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-    }, [generatedImageUrl]);
+    }, [generatedImageUrl, t]);
 
     const handleExport = useCallback(() => {
         const dataToExport = {
@@ -230,12 +230,15 @@ const ConfigurationPanelFC: React.FC<ConfigurationPanelProps> = ({
         <div className="h-full bg-zinc-900 border-r border-zinc-800 p-4 flex flex-col">
             <div className="flex-shrink-0">
                 <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-shrink-0"><XCircle className="h-6 w-6 text-red-500" /><h2 className="text-lg font-semibold text-zinc-200">Configuration</h2></div>
+                    <div className="flex items-center gap-2 flex-shrink-0"><XCircle className="h-6 w-6 text-red-500" /><h2 className="text-lg font-semibold text-zinc-200">{t('config_panel.title')}</h2></div>
                     <div className="flex items-center gap-2">
                         {isLoading ? (<Skeleton className="h-9 w-28" />) : (
                             <Select value={mode} onValueChange={(v: 'single' | 'batch') => setMode(v)}>
                                 <SelectTrigger className="w-[110px] bg-zinc-800 border-zinc-700"><SelectValue /></SelectTrigger>
-                                <SelectContent><SelectItem value="single">Single</SelectItem><SelectItem value="batch">Batch</SelectItem></SelectContent>
+                                <SelectContent>
+                                    <SelectItem value="single">{t('config_panel.mode_single')}</SelectItem>
+                                    <SelectItem value="batch">{t('config_panel.mode_batch')}</SelectItem>
+                                </SelectContent>
                             </Select>
                         )}
                     </div>
@@ -250,20 +253,20 @@ const ConfigurationPanelFC: React.FC<ConfigurationPanelProps> = ({
                             <AccordionItem value="batch-settings">
                                 <AccordionPrimitive.Header>
                                     <AccordionPrimitive.Trigger className="text-base font-semibold text-zinc-300 p-2 rounded-md hover:bg-zinc-800 flex justify-between items-center w-full">
-                                        Batch Settings
+                                        {t('config_panel.batch_settings_title')}
                                         <ChevronDown className="h-4 w-4 text-zinc-400 transition-transform [&[data-state=open]]:rotate-180" />
                                     </AccordionPrimitive.Trigger>
                                 </AccordionPrimitive.Header>
                                 <AccordionContent className="pt-4 space-y-4">
                                     <div className="grid w-full items-center gap-1.5">
-                                        <Label>Archive Format</Label>
+                                        <Label>{t('config_panel.archive_format')}</Label>
                                         <Select value={batchSettings.format} onValueChange={(v: ArchiveFormat) => setBatchSettings({ ...batchSettings, format: v })}>
                                             <SelectTrigger className="bg-zinc-800 border-zinc-700"><SelectValue /></SelectTrigger>
                                             <SelectContent><SelectItem value="zip">ZIP</SelectItem><SelectItem value="tar">TAR</SelectItem></SelectContent>
                                         </Select>
                                     </div>
                                     <div className="grid w-full items-center gap-1.5">
-                                        <Label>Compression Level ({batchSettings.compression})</Label>
+                                        <Label>{t('config_panel.compression_level')} ({batchSettings.compression})</Label>
                                         <Slider value={[batchSettings.compression]} onValueChange={(v: number[]) => setBatchSettings({ ...batchSettings, compression: v[0] })} max={9} step={1} />
                                     </div>
                                 </AccordionContent>
@@ -299,7 +302,7 @@ const ConfigurationPanelFC: React.FC<ConfigurationPanelProps> = ({
                                     </SortableContext>
                                 </div>
                             </DndContext>
-                            <Button variant="outline" className="w-full border-dashed" onClick={handleAddInstance} disabled={isLoading}><PlusCircle className="mr-2 h-4 w-4" /> Add New Error</Button>
+                            <Button variant="outline" className="w-full border-dashed" onClick={handleAddInstance} disabled={isLoading}><PlusCircle className="mr-2 h-4 w-4" /> {t('config_panel.add_new_error')}</Button>
                         </div>
                     )}
                 </ScrollArea>
@@ -310,23 +313,23 @@ const ConfigurationPanelFC: React.FC<ConfigurationPanelProps> = ({
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-col gap-2">
                         <Button className="w-full" disabled={isLoading || isGenerating} onClick={handleGenerate}>
-                            <Anvil className="mr-2 h-4 w-4" />{isGenerating ? "Generating..." : (mode === 'batch' ? "Generate & Download" : "Generate")}
+                            <Anvil className="mr-2 h-4 w-4" />{isGenerating ? t('config_panel.generating') : (mode === 'batch' ? t('config_panel.generate_batch') : t('config_panel.generate_single'))}
                         </Button>
                         {mode === 'single' && (
                             <div className="flex gap-2">
                                 <Button variant="outline" className="flex-1" onClick={handleCopy} disabled={isLoading || !generatedImageBlob}>
-                                    <Copy className="mr-2 h-4 w-4" /> Copy
+                                    <Copy className="mr-2 h-4 w-4" /> {t('config_panel.copy')}
                                 </Button>
                                 <Button variant="outline" className="flex-1" onClick={handleDownload} disabled={isLoading || !generatedImageBlob}>
-                                    <DownloadIcon className="mr-2 h-4 w-4" /> Download
+                                    <DownloadIcon className="mr-2 h-4 w-4" /> {t('config_panel.download')}
                                 </Button>
                             </div>
                         )}
                     </div>
                     <div className="flex flex-wrap gap-2">
                         <input type="file" ref={importInputRef} onChange={onImport} accept=".json" className="hidden" />
-                        <Button variant="outline" className="flex-1" onClick={() => importInputRef.current?.click()} disabled={isLoading}><Upload className="mr-2 h-4 w-4" /> Import</Button>
-                        <Button variant="outline" className="flex-1" onClick={handleExport} disabled={isLoading}><DownloadIcon className="mr-2 h-4 w-4" /> Export</Button>
+                        <Button variant="outline" className="flex-1" onClick={() => importInputRef.current?.click()} disabled={isLoading}><Upload className="mr-2 h-4 w-4" /> {t('config_panel.import')}</Button>
+                        <Button variant="outline" className="flex-1" onClick={handleExport} disabled={isLoading}><DownloadIcon className="mr-2 h-4 w-4" /> {t('config_panel.export')}</Button>
                     </div>
                 </div>
             </div>

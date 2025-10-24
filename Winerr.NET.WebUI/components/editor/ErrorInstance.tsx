@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { DndContext, closestCenter, type DragEndEvent, PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { PlusCircle, Image as ImageIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { useGetStyleDetails } from "@/api/queries";
 
@@ -35,6 +36,7 @@ const ErrorInstanceFC: React.FC<ErrorInstanceProps> = ({
     instance, styles, isLoading, onConfigChange, onOpenIconPicker,
     onAddNewButton, onEditButton, onDeleteButton
 }) => {
+    const { t } = useTranslation();
     const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
     const { config } = instance;
 
@@ -113,12 +115,12 @@ const ErrorInstanceFC: React.FC<ErrorInstanceProps> = ({
 
     const systemOptions: ComboboxOption[] = Array.from(groupedStyles.keys()).map(family => ({
         value: family,
-        label: family,
+        label: t(`systems.${family}`, family),
     }));
 
     const themeOptions: ComboboxOption[] = selectedSystem ? (groupedStyles.get(selectedSystem) || []).map(style => ({
         value: style.id,
-        label: style.theme_name,
+        label: t(`themes.${style.theme_name}`, style.theme_name),
     })) : [];
 
     const handleSystemChange = (systemFamily: string) => {
@@ -134,45 +136,38 @@ const ErrorInstanceFC: React.FC<ErrorInstanceProps> = ({
     return (
         <Accordion type="multiple" defaultValue={["item-1", "item-2", "item-3", "item-4", "item-5"]} className="w-full space-y-2">
             <AccordionItem value="item-1">
-                <AccordionTrigger className="text-base font-semibold text-zinc-300">1. Select Style</AccordionTrigger>
+                <AccordionTrigger className="text-base font-semibold text-zinc-300">{t('error_instance.section1_title')}</AccordionTrigger>
                 <AccordionContent>
-                    <div className="grid w-full items-center gap-2 p-2">
+                    <div className="flex w-full items-start gap-2 p-2">
                         {isLoading ? (
                             <>
-                                <Skeleton className="h-9 w-full" />
-                                <Skeleton className="h-9 w-full" />
+                                <Skeleton className="h-9 flex-1" />
+                                <Skeleton className="h-9 flex-1" />
                             </>
                         ) : (
                             <>
-                                <div className="flex w-full items-start gap-3">
-                                    {isLoading ? (
-                                        <>
-                                            <Skeleton className="h-9 flex-1" />
-                                            <Skeleton className="h-9 flex-1" />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div className="grid w-full items-center gap-1.5 flex-1">
-                                                <Label htmlFor={`system-${instance.id}`} className="text-zinc-400">Operating System</Label>
-                                                <Combobox
-                                                    options={systemOptions}
-                                                    value={selectedSystem || ""}
-                                                    onChange={handleSystemChange}
-                                                    placeholder="Select an OS..."
-                                                />
-                                            </div>
-                                            <div className="grid w-full items-center gap-1.5 flex-1">
-                                                <Label htmlFor={`theme-${instance.id}`} className="text-zinc-400">Theme</Label>
-                                                <Combobox
-                                                    options={themeOptions}
-                                                    value={config.styleId}
-                                                    onChange={(styleId) => onConfigChange({ styleId })}
-                                                    placeholder="Select a theme..."
-                                                    className={!selectedSystem ? "opacity-50 cursor-not-allowed" : ""}
-                                                />
-                                            </div>
-                                        </>
-                                    )}
+                                <div className="grid w-full items-center gap-1.5 flex-1">
+                                    <Label htmlFor={`system-${instance.id}`} className="text-zinc-400">{t('error_instance.os_label')}</Label>
+                                    <Combobox
+                                        options={systemOptions}
+                                        value={selectedSystem || ""}
+                                        onChange={handleSystemChange}
+                                        placeholder={t('error_instance.os_placeholder')}
+                                        searchPlaceholder={t('combobox.search')}
+                                        emptyMessage={t('combobox.empty')}
+                                    />
+                                </div>
+                                <div className="grid w-full items-center gap-1.5 flex-1">
+                                    <Label htmlFor={`theme-${instance.id}`} className="text-zinc-400">{t('error_instance.theme_label')}</Label>
+                                    <Combobox
+                                        options={themeOptions}
+                                        value={config.styleId}
+                                        onChange={(styleId) => onConfigChange({ styleId })}
+                                        placeholder={t('error_instance.theme_placeholder')}
+                                        searchPlaceholder={t('combobox.search')}
+                                        emptyMessage={t('combobox.empty')}
+                                        className={!selectedSystem ? "opacity-50 cursor-not-allowed" : ""}
+                                    />
                                 </div>
                             </>
                         )}
@@ -181,7 +176,7 @@ const ErrorInstanceFC: React.FC<ErrorInstanceProps> = ({
             </AccordionItem>
 
             <AccordionItem value="item-2">
-                <AccordionTrigger className="text-base font-semibold text-zinc-300">2. Main Content</AccordionTrigger>
+                <AccordionTrigger className="text-base font-semibold text-zinc-300">{t('error_instance.section2_title')}</AccordionTrigger>
                 <AccordionContent>
                     <div className="grid w-full items-center gap-4 p-2">
                         {isBusy ? (
@@ -194,32 +189,32 @@ const ErrorInstanceFC: React.FC<ErrorInstanceProps> = ({
                             <>
                                 <FormField
                                     id={`title-${instance.id}`}
-                                    label="Title"
+                                    label={t('error_instance.title_label')}
                                     value={config.title}
                                     onDebouncedChange={(title) => onConfigChange({ title })}
-                                    placeholder="Enter window title..."
+                                    placeholder={t('error_instance.title_placeholder')}
                                 />
                                 <FormField
                                     as="textarea"
                                     id={`content-${instance.id}`}
-                                    label="Content"
+                                    label={t('error_instance.content_label')}
                                     value={config.content}
                                     onDebouncedChange={(content) => onConfigChange({ content })}
-                                    placeholder="Enter error message content..."
+                                    placeholder={t('error_instance.content_placeholder')}
                                     inputClassName="min-h-[100px]"
                                 />
                                 <FormField
                                     id={`max-width-${instance.id}`}
-                                    label="Max Width (px)"
+                                    label={t('error_instance.max_width_label')}
                                     type="number"
                                     value={config.maxWidth}
                                     onDebouncedChange={(maxWidth) => onConfigChange({ maxWidth })}
-                                    placeholder="Auto"
+                                    placeholder={t('error_instance.max_width_placeholder')}
                                     min={0}
                                 >
                                     <InfoPopover
-                                        label="Max Width (px)"
-                                        popoverContent="Sets the maximum total width of the final image, including borders. The content area will be scaled down to fit within this limit."
+                                        label={t('error_instance.max_width_label')}
+                                        popoverContent={t('error_instance.max_width_popover')}
                                     />
                                 </FormField>
                             </>
@@ -229,7 +224,7 @@ const ErrorInstanceFC: React.FC<ErrorInstanceProps> = ({
             </AccordionItem>
 
             <AccordionItem value="item-3">
-                <AccordionTrigger className="text-base font-semibold text-zinc-300">3. Icon & Details</AccordionTrigger>
+                <AccordionTrigger className="text-base font-semibold text-zinc-300">{t('error_instance.section3_title')}</AccordionTrigger>
                 <AccordionContent>
                     <div className="flex items-end justify-between p-2 gap-4">
                         {isBusy ? (
@@ -238,18 +233,18 @@ const ErrorInstanceFC: React.FC<ErrorInstanceProps> = ({
                             <div className="flex items-end gap-2 w-full">
                                 <FormField
                                     id={`icon-${instance.id}`}
-                                    label="Icon ID"
+                                    label={t('error_instance.icon_id_label')}
                                     type="number"
                                     value={config.iconId}
                                     onDebouncedChange={handleDebouncedIconIdChange}
                                     min={0}
                                     max={config.maxIconId}
-                                    placeholder="0"
+                                    placeholder={t('error_instance.icon_id_placeholder')}
                                     className="flex-grow"
                                 >
                                     <InfoPopover
-                                        label="Icon ID"
-                                        popoverContent="Each style has its own set of icons. Use the picker button to see all available icons and their IDs for the selected style."
+                                        label={t('error_instance.icon_id_label')}
+                                        popoverContent={t('error_instance.icon_id_popover')}
                                     />
                                 </FormField>
                                 <Button variant="outline" size="icon" className="bg-zinc-800 border-zinc-700 hover:bg-zinc-700 flex-shrink-0" onClick={onOpenIconPicker}>
@@ -261,8 +256,8 @@ const ErrorInstanceFC: React.FC<ErrorInstanceProps> = ({
                             {isBusy ? (<Skeleton className="h-4 w-4" />) : (
                                 <InfoPopover
                                     htmlFor={`cross-${instance.id}`}
-                                    label="Cross Enabled"
-                                    popoverContent="Determines whether the close button (cross) in the window's title bar is rendered as active or disabled."
+                                    label={t('error_instance.cross_enabled_label')}
+                                    popoverContent={t('error_instance.cross_enabled_popover')}
                                 />
                             )}
                             <Checkbox id={`cross-${instance.id}`} checked={config.isCrossEnabled} onCheckedChange={(c) => onConfigChange({ isCrossEnabled: c as boolean })} />
@@ -272,7 +267,7 @@ const ErrorInstanceFC: React.FC<ErrorInstanceProps> = ({
             </AccordionItem>
 
             <AccordionItem value="item-4">
-                <AccordionTrigger className="text-base font-semibold text-zinc-300">4. Button Constructor</AccordionTrigger>
+                <AccordionTrigger className="text-base font-semibold text-zinc-300">{t('error_instance.section4_title')}</AccordionTrigger>
                 <AccordionContent>
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleButtonsDragEnd}>
                         <div className="p-2 space-y-3">
@@ -286,7 +281,7 @@ const ErrorInstanceFC: React.FC<ErrorInstanceProps> = ({
                                 )}
                             </SortableContext>
                             <Button variant="outline" className="w-full border-dashed" onClick={onAddNewButton} disabled={isBusy}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Add New Button
+                                <PlusCircle className="mr-2 h-4 w-4" /> {t('error_instance.add_new_button')}
                             </Button>
                         </div>
                     </DndContext>
@@ -294,26 +289,26 @@ const ErrorInstanceFC: React.FC<ErrorInstanceProps> = ({
             </AccordionItem>
 
             <AccordionItem value="item-5">
-                <AccordionTrigger className="text-base font-semibold text-zinc-300">5. Button Layout</AccordionTrigger>
+                <AccordionTrigger className="text-base font-semibold text-zinc-300">{t('error_instance.section5_title')}</AccordionTrigger>
                 <AccordionContent>
                     <div className="p-2 space-y-4">
                         <div className="grid w-full items-center gap-1.5">
                             <InfoPopover
-                                label="Alignment"
-                                popoverContent="Controls the horizontal alignment of the entire button block. The 'Auto' option uses the default alignment defined by the selected style, while other options force a specific layout."
+                                label={t('error_instance.alignment_label')}
+                                popoverContent={t('error_instance.alignment_popover')}
                             />
                             <RadioGroup value={config.buttonAlignment} onValueChange={(v) => onConfigChange({ buttonAlignment: v as ButtonAlignment })} className="flex flex-wrap gap-4 pt-1">
-                                <div className="flex items-center space-x-2"><RadioGroupItem value="Auto" id={`align-auto-${instance.id}`} /><Label htmlFor={`align-auto-${instance.id}`}>Auto</Label></div>
-                                <div className="flex items-center space-x-2"><RadioGroupItem value="Left" id={`align-left-${instance.id}`} /><Label htmlFor={`align-left-${instance.id}`}>Left</Label></div>
-                                <div className="flex items-center space-x-2"><RadioGroupItem value="Center" id={`align-center-${instance.id}`} /><Label htmlFor={`align-center-${instance.id}`}>Center</Label></div>
-                                <div className="flex items-center space-x-2"><RadioGroupItem value="Right" id={`align-right-${instance.id}`} /><Label htmlFor={`align-right-${instance.id}`}>Right</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="Auto" id={`align-auto-${instance.id}`} /><Label htmlFor={`align-auto-${instance.id}`}>{t('error_instance.alignment_auto')}</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="Left" id={`align-left-${instance.id}`} /><Label htmlFor={`align-left-${instance.id}`}>{t('error_instance.alignment_left')}</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="Center" id={`align-center-${instance.id}`} /><Label htmlFor={`align-center-${instance.id}`}>{t('error_instance.alignment_center')}</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="Right" id={`align-right-${instance.id}`} /><Label htmlFor={`align-right-${instance.id}`}>{t('error_instance.alignment_right')}</Label></div>
                             </RadioGroup>
                         </div>
                         <div className="flex items-center justify-between">
                             <InfoPopover
                                 htmlFor={`auto-sort-${instance.id}`}
-                                label="Auto-sort Buttons"
-                                popoverContent="When enabled, buttons are automatically arranged based on their type in an order predefined by the style (e.g., Recommended, then Default, then Disabled). Disable this to allow manual drag-and-drop sorting."
+                                label={t('error_instance.autosort_label')}
+                                popoverContent={t('error_instance.autosort_popover')}
                             />
                             <Switch id={`auto-sort-${instance.id}`} checked={config.isButtonSortEnabled} onCheckedChange={(c) => onConfigChange({ isButtonSortEnabled: c })} />
                         </div>

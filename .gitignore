@@ -31,8 +31,9 @@ PublishProfiles/
 
 version.txt
 
-.next
+Winerr.NET.WebUI/.next
 
-node_modules
+Winerr.NET.WebUI/node_modules
+Winerr.NET.WebUI/package-lock.json
 
 GlobalSuppressions.cs

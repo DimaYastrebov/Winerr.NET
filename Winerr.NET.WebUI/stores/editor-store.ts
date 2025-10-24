@@ -9,6 +9,7 @@ import {
     type ErrorConfig,
     type ImportedInstance
 } from "@/lib/types";
+import { TFunction } from "i18next";
 
 const createNewErrorInstance = (name: string, styleId: string): ErrorConfig => ({
     id: `inst-${Math.random().toString(36).slice(2)}`,
@@ -44,7 +45,7 @@ interface EditorActions {
         instances: ErrorConfig[],
         mode: 'single' | 'batch',
         batchSettings: { format: ArchiveFormat, compression: number }
-    } | null, styles: SystemStyle[]) => void;
+    } | null, styles: SystemStyle[], t: TFunction) => void;
     setMode: (mode: 'single' | 'batch') => void;
     setBatchSettings: (settings: { format: ArchiveFormat, compression: number }) => void;
     setIsGenerating: (isGenerating: boolean) => void;
@@ -55,8 +56,8 @@ interface EditorActions {
     updateInstance: (id: string, configUpdate: Partial<ErrorConfig['config']>) => void;
     updateInstanceName: (id: string, newName: string) => void;
     handleInstancesDragEnd: (event: DragEndEvent) => void;
-    importState: (importedData: any, styles: SystemStyle[]) => void;
-    clearSession: () => void;
+    importState: (importedData: any, styles: SystemStyle[], t: TFunction) => void;
+    clearSession: (t: TFunction) => void;
 }
 
 export const useEditorStore = create<EditorState & EditorActions>((set, get) => ({
@@ -69,7 +70,7 @@ export const useEditorStore = create<EditorState & EditorActions>((set, get) => 
     generationTime: null,
     isInitialized: false,
 
-    initialize: (initialState, styles) => {
+    initialize: (initialState, styles, t) => {
         if (get().isInitialized) return;
         if (initialState && initialState.instances && initialState.instances.length > 0) {
             set({
@@ -78,7 +79,7 @@ export const useEditorStore = create<EditorState & EditorActions>((set, get) => 
                 batchSettings: initialState.batchSettings,
                 isInitialized: true
             });
-            toast.success("Session restored", { description: "Your previous work has been loaded." });
+            toast.success(t('toasts.session_restored_title'), { description: t('toasts.session_restored_desc') });
         } else {
             const firstStyleId = styles.length > 0 ? styles[0].id : "";
             set({
@@ -142,7 +143,7 @@ export const useEditorStore = create<EditorState & EditorActions>((set, get) => 
         }
     },
 
-    importState: (importedData, styles) => {
+    importState: (importedData, styles, t) => {
         try {
             if (Array.isArray(importedData.instances)) {
                 const styleId = styles.length > 0 ? styles[0].id : "";
@@ -157,19 +158,19 @@ export const useEditorStore = create<EditorState & EditorActions>((set, get) => 
                     mode: importedData.mode || (validatedInstances.length > 1 ? 'batch' : 'single'),
                     batchSettings: importedData.batchSettings || { format: 'zip', compression: 6 }
                 });
-                toast.success("Configuration imported successfully!");
+                toast.success(t('toasts.import_success'));
             } else {
                 throw new Error("Invalid config format: 'instances' array not found.");
             }
         } catch (error) {
             console.error("Failed to import file:", error);
-            toast.error("Failed to import configuration", { description: "The selected file is either not a valid JSON or has an incorrect structure." });
+            toast.error(t('toasts.import_fail_title'), { description: t('toasts.import_fail_desc') });
         }
     },
 
-    clearSession: () => {
+    clearSession: (t) => {
         localStorage.removeItem('winerr-autosave');
-        toast.info("Session cleared", { description: "The page will now reload." });
+        toast.info(t('toasts.session_cleared_title'), { description: t('toasts.session_cleared_desc') });
         setTimeout(() => {
             window.location.reload();
         }, 1000);

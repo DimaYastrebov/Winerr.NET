@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -19,6 +20,7 @@ interface IconPickerDialogProps {
 }
 
 export const IconPickerDialog: React.FC<IconPickerDialogProps> = ({ isOpen, onOpenChange, onSelect, styleId }) => {
+    const { t } = useTranslation();
     const [iconData, setIconData] = useState<IconMapData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -55,7 +57,7 @@ export const IconPickerDialog: React.FC<IconPickerDialogProps> = ({ isOpen, onOp
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-3xl h-[80vh] bg-zinc-900 border-zinc-800 flex flex-col">
                 <DialogHeader>
-                    <DialogTitle>Select an Icon for &apos;{styleId}&apos;</DialogTitle>
+                    <DialogTitle>{t('icon_picker.title', { styleId })}</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 overflow-hidden">
                     <ScrollArea className="h-full pr-4">

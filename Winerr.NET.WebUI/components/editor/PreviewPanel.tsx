@@ -1,12 +1,14 @@
 "use client";
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { LoaderCircle, Timer, Github } from "lucide-react";
 import { Button } from "../ui/button";
 import { useEditorStore } from "@/stores/editor-store";
 import { useShallow } from 'zustand/react/shallow';
 
 export const PreviewPanel: React.FC = () => {
+    const { t } = useTranslation();
     const { imageUrl, isGenerating, mode, generationTime } = useEditorStore(
         useShallow((state) => ({
             imageUrl: state.generatedImageUrl,
@@ -22,7 +24,7 @@ export const PreviewPanel: React.FC = () => {
                 <div className="flex flex-col items-center gap-4">
                     <LoaderCircle className="h-12 w-12 text-zinc-500 animate-spin" />
                     <p className="text-zinc-400">
-                        {mode === 'single' ? "Generating image..." : "Generating archive..."}
+                        {mode === 'single' ? t('preview_panel.generating_single') : t('preview_panel.generating_batch')}
                     </p>
                 </div>
             );
@@ -41,7 +43,7 @@ export const PreviewPanel: React.FC = () => {
 
         return (
             <p className="text-zinc-400">
-                {mode === 'single' ? "Preview will be shown here" : "Batch mode: Preview is not available"}
+                {mode === 'single' ? t('preview_panel.preview_here') : t('preview_panel.no_preview_batch')}
             </p>
         );
     };

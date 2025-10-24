@@ -7,6 +7,7 @@ import {
     type ArchiveFormat
 } from "@/lib/types";
 import { useEditorStore } from "@/stores/editor-store";
+import { TFunction } from "i18next";
 
 const fetchStyles = async (): Promise<SystemStyle[]> => {
     const response = await fetch("/v1/styles");
@@ -92,7 +93,7 @@ export const useGetStyleDetails = (styleId: string) => {
     });
 };
 
-export const useGenerateImage = () => {
+export const useGenerateImage = (t: TFunction) => {
     const { setIsGenerating, setGeneratedImage, setGenerationTime } = useEditorStore.getState();
 
     return useMutation({
@@ -114,7 +115,7 @@ export const useGenerateImage = () => {
             setGeneratedImage(blob);
         },
         onError: (error: Error) => {
-            toast.error("Image Generation Failed", { description: error.message });
+            toast.error(t('toasts.generate_fail_title'), { description: error.message });
         },
         onSettled: () => {
             setIsGenerating(false);
@@ -122,7 +123,7 @@ export const useGenerateImage = () => {
     });
 };
 
-export const useGenerateBatch = () => {
+export const useGenerateBatch = (t: TFunction) => {
     const { setIsGenerating } = useEditorStore.getState();
 
     return useMutation({
@@ -132,10 +133,10 @@ export const useGenerateBatch = () => {
             setIsGenerating(true);
         },
         onSuccess: () => {
-            toast.success("Batch generation complete", { description: "Your archive has been downloaded." });
+            toast.success(t('toasts.batch_success_title'), { description: t('toasts.batch_success_desc') });
         },
         onError: (error: Error) => {
-            toast.error("Batch Generation Failed", { description: error.message });
+            toast.error(t('toasts.batch_fail_title'), { description: error.message });
         },
         onSettled: () => {
             setIsGenerating(false);

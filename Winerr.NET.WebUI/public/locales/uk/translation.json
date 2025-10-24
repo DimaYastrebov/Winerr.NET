@@ -1,0 +1,137 @@
+{
+  "systems": {
+    "Windows 7": "Windows 7"
+  },
+  "themes": {
+    "Aero": "Аеро",
+    "Architecture": "Архітектура",
+    "Basic": "Базова",
+    "Landscapes": "Пейзажі",
+    "Nature": "Природа",
+    "Scenes": "Сцени",
+    "Ruby": "Рубін",
+    "Gold": "Золото",
+    "Onyx": "Онікс",
+    "Emerald": "Смарагд",
+    "Sea": "Море"
+  },
+  "button_types": {
+    "Default": "Звичайна",
+    "Recommended": "Рекомендована",
+    "Disabled": "Вимкнена"
+  },
+  "combobox": {
+    "search": "Пошук...",
+    "empty": "Опцій не знайдено."
+  },
+  "menubar": {
+    "file": "Файл",
+    "file_clear_session": "Очистити сесію й перезавантажити",
+    "view": "Вигляд",
+    "view_language": "Мова",
+    "help": "Довідка",
+    "help_docs": "Документація",
+    "help_about": "Про Winerr.NET"
+  },
+  "config_panel": {
+    "title": "Конфігурація",
+    "mode_single": "Одиночний",
+    "mode_batch": "Пакетний",
+    "batch_settings_title": "Налаштування пакетів",
+    "archive_format": "Формат архіву",
+    "compression_level": "Рівень стиснення",
+    "add_new_error": "Додати нову помилку",
+    "generate_single": "Згенерувати",
+    "generate_batch": "Згенерувати й завантажити",
+    "generating": "Генерується...",
+    "copy": "Копіювати",
+    "download": "Завантажити",
+    "import": "Імпорт",
+    "export": "Експорт"
+  },
+  "error_instance": {
+    "section1_title": "1. Вибір стилю",
+    "os_label": "Операційна система",
+    "theme_label": "Тема",
+    "os_placeholder": "Вибери ОС...",
+    "theme_placeholder": "Вибери тему...",
+    "section2_title": "2. Основний вміст",
+    "title_label": "Заголовок",
+    "title_placeholder": "Ой у лузі червона калина...",
+    "content_label": "Вміст",
+    "content_placeholder": "...похилилася. Чогось наша славна Україна зажурилася...",
+    "max_width_label": "Макс. ширина (пікс.)",
+    "max_width_placeholder": "Авто",
+    "max_width_popover": "Встановлює максимальну загальну ширину фінального зображення, включно з рамками. Область вмісту буде масштабована, щоб поміститися в цей ліміт.",
+    "section3_title": "3. Іконка та деталі",
+    "icon_id_label": "ID іконки",
+    "icon_id_placeholder": "0",
+    "icon_id_popover": "Кожен стиль має власний набір іконок. Використай кнопку вибору, щоб переглянути всі доступні іконки та їхні ID для вибраного стилю.",
+    "cross_enabled_label": "Активний хрестик",
+    "cross_enabled_popover": "Визначає, чи буде кнопка закриття (хрестик) у заголовку вікна активною або вимкненою.",
+    "section4_title": "4. Конструктор кнопок",
+    "add_new_button": "Додати нову кнопку",
+    "section5_title": "5. Розташування кнопок",
+    "alignment_label": "Вирівнювання",
+    "alignment_popover": "Керує горизонтальним вирівнюванням усього блоку кнопок. Опція 'Авто' використовує стандартне вирівнювання, визначене стилем, а інші опції задають конкретне розташування.",
+    "alignment_auto": "Авто",
+    "alignment_left": "Ліворуч",
+    "alignment_center": "По центру",
+    "alignment_right": "Праворуч",
+    "autosort_label": "Автосортування кнопок",
+    "autosort_popover": "Коли ввімкнено, кнопки автоматично розташовуються за типом у порядку, визначеному стилем (наприклад, Рекомендована, потім Звичайна, потім Вимкнена). Вимкни, щоб дозволити ручне сортування перетягуванням."
+  },
+  "button_dialog": {
+    "title_edit": "Редагування кнопки",
+    "title_add": "Додати нову кнопку",
+    "text_label": "Текст",
+    "type_label": "Тип",
+    "mnemonic_label": "Мнемоніка",
+    "mnemonic_popover": "Коли ввімкнено, підкреслює перший символ тексту кнопки, позначаючи його як гарячу клавішу.",
+    "no_types_supported": "Типи не підтримуються",
+    "cancel": "Скасувати",
+    "save": "Зберегти"
+  },
+  "icon_picker": {
+    "title": "Вибери іконку для '{{styleId}}'"
+  },
+  "preview_panel": {
+    "generating_single": "Генерується зображення...",
+    "generating_batch": "Генерується архів...",
+    "preview_here": "Попередній перегляд з’явиться тут",
+    "no_preview_batch": "Пакетний режим: перегляд недоступний"
+  },
+  "about_dialog": {
+    "title": "Winerr.NET WebUI",
+    "version": "Версія",
+    "description": "Потужний веб-редактор для Winerr.NET.",
+    "created_by": "Створено <1>DimaYastrebov</1>.",
+    "github_repo": "Репозиторій GitHub"
+  },
+  "server_down": {
+    "title": "Сервер недоступний",
+    "description": "Не вдалося підключитися до сервера Winerr.NET. Додаток не може працювати без нього. Переконайся, що сервер запущено й доступний.",
+    "reload_button": "Перезавантажити",
+    "checking_button": "Перевірка..."
+  },
+  "toasts": {
+    "session_restored_title": "Сесію відновлено",
+    "session_restored_desc": "Твоя попередня робота була завантажена.",
+    "import_success": "Конфігурацію успішно імпортовано!",
+    "import_fail_title": "Не вдалося імпортувати конфігурацію",
+    "import_fail_desc": "Обраний файл не є дійсним JSON або має неправильну структуру.",
+    "session_cleared_title": "Сесію очищено",
+    "session_cleared_desc": "Сторінку буде перезавантажено.",
+    "copy_fail_title": "Нічого копіювати",
+    "copy_fail_desc": "Спочатку згенеруй зображення.",
+    "copy_success": "Зображення скопійовано в буфер обміну!",
+    "copy_unsupported_title": "Помилка копіювання",
+    "copy_unsupported_desc": "Твій браузер може не підтримувати цю функцію.",
+    "download_fail_title": "Нічого завантажувати",
+    "download_fail_desc": "Спочатку згенеруй зображення.",
+    "generate_fail_title": "Помилка генерації зображення",
+    "batch_success_title": "Пакетну генерацію завершено",
+    "batch_success_desc": "Твій архів було завантажено.",
+    "batch_fail_title": "Помилка пакетної генерації"
+  }
+}

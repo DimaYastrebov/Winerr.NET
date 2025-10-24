@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ServerCrash, RefreshCw } from "lucide-react";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
@@ -11,6 +12,7 @@ interface ServerDownOverlayProps {
 }
 
 export const ServerDownOverlay: React.FC<ServerDownOverlayProps> = ({ isOpen, onReload }) => {
+    const { t } = useTranslation();
     const [isChecking, setIsChecking] = useState(false);
 
     const handleCheckServer = async () => {
@@ -46,12 +48,11 @@ export const ServerDownOverlay: React.FC<ServerDownOverlayProps> = ({ isOpen, on
                 <ServerCrash className="h-20 w-20 text-red-500" />
 
                 <h2 id="server-down-title" className="text-3xl font-bold">
-                    Server Unavailable
+                    {t('server_down.title')}
                 </h2>
 
                 <p className="max-w-md text-zinc-400">
-                    Could not connect to the Winerr.NET server. The application cannot function without it.
-                    Please ensure the server is running and accessible.
+                    {t('server_down.description')}
                 </p>
 
                 <Button
@@ -63,12 +64,12 @@ export const ServerDownOverlay: React.FC<ServerDownOverlayProps> = ({ isOpen, on
                     {isChecking ? (
                         <>
                             <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
-                            Checking...
+                            {t('server_down.checking_button')}
                         </>
                     ) : (
                         <>
                             <RefreshCw className="mr-2 h-5 w-5" />
-                            Reload
+                            {t('server_down.reload_button')}
                         </>
                     )}
                 </Button>

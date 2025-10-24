@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useBreakpoint } from "@/hooks/use-breakpoint";
 import { useEditorStore } from "@/stores/editor-store";
 import { useGetStyles } from "@/api/queries";
+import { useTranslation } from "react-i18next";
 
 import { AboutDialog } from "@/components/editor/AboutDialog";
 import { AppMenubar } from "@/components/editor/AppMenubar";
@@ -13,9 +14,11 @@ import { PreviewPanel } from "@/components/editor/PreviewPanel";
 import { ServerDownOverlay } from "@/components/editor/ServerDownOverlay";
 
 const Home = () => {
+    const { t } = useTranslation();
     const isMobile = useBreakpoint(850);
     const [isAboutDialogOpen, setIsAboutDialogOpen] = React.useState(false);
     const importInputRef = useRef<HTMLInputElement>(null);
+    const [isClient, setIsClient] = useState(false);
 
     const { data: styles = [], isError: isServerDown, isLoading: isLoadingStyles } = useGetStyles();
     const { initialize, clearSession, importState } = useEditorStore();
@@ -32,9 +35,13 @@ const Home = () => {
             localStorage.removeItem('winerr-autosave');
         }
         if (styles.length > 0) {
-            initialize(restoredState, styles);
+            initialize(restoredState, styles, t);
         }
-    }, [styles, initialize]);
+    }, [styles, initialize, t]);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -44,7 +51,7 @@ const Home = () => {
             const content = e.target?.result;
             if (typeof content === 'string') {
                 const importedData = JSON.parse(content);
-                importState(importedData, styles);
+                importState(importedData, styles, t);
             }
         };
         reader.readAsText(file);
@@ -55,6 +62,10 @@ const Home = () => {
 
     const handleReload = () => window.location.reload();
 
+    if (!isClient) {
+        return null;
+    }
+
     return (
         <main className="h-screen flex flex-col bg-zinc-950 text-white overflow-hidden">
             <AboutDialog isOpen={isAboutDialogOpen} onOpenChange={setIsAboutDialogOpen} />
@@ -63,7 +74,7 @@ const Home = () => {
             {!isServerDown && (
                 <>
                     <AppMenubar
-                        onClearSession={clearSession}
+                        onClearSession={() => clearSession(t)}
                         onOpenAbout={() => setIsAboutDialogOpen(true)}
                     />
 

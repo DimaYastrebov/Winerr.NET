@@ -1,0 +1,137 @@
+{
+  "systems": {
+    "Windows 7": "Windows 7"
+  },
+  "themes": {
+    "Aero": "Aero",
+    "Architecture": "Architecture",
+    "Basic": "Basic",
+    "Landscapes": "Landscapes",
+    "Nature": "Nature",
+    "Scenes": "Scenes",
+    "Ruby": "Ruby",
+    "Gold": "Gold",
+    "Onyx": "Onyx",
+    "Emerald": "Emerald",
+    "Sea": "Sea"
+  },
+  "button_types": {
+    "Default": "Default",
+    "Recommended": "Recommended",
+    "Disabled": "Disabled"
+  },
+  "combobox": {
+    "search": "Search...",
+    "empty": "No option found."
+  },
+  "menubar": {
+    "file": "File",
+    "file_clear_session": "Clear Session & Reload",
+    "view": "View",
+    "view_language": "Language",
+    "help": "Help",
+    "help_docs": "Documentation",
+    "help_about": "About Winerr.NET"
+  },
+  "config_panel": {
+    "title": "Configuration",
+    "mode_single": "Single",
+    "mode_batch": "Batch",
+    "batch_settings_title": "Batch Settings",
+    "archive_format": "Archive Format",
+    "compression_level": "Compression Level",
+    "add_new_error": "Add New Error",
+    "generate_single": "Generate",
+    "generate_batch": "Generate & Download",
+    "generating": "Generating...",
+    "copy": "Copy",
+    "download": "Download",
+    "import": "Import",
+    "export": "Export"
+  },
+  "error_instance": {
+    "section1_title": "1. Select Style",
+    "os_label": "Operating System",
+    "theme_label": "Theme",
+    "os_placeholder": "Select an OS...",
+    "theme_placeholder": "Select a theme...",
+    "section2_title": "2. Main Content",
+    "title_label": "Title",
+    "title_placeholder": "Oh, in the meadow a red viburnum...",
+    "content_label": "Content",
+    "content_placeholder": "...has bent down low. For some reason, our glorious Ukraine has been worried so...",
+    "max_width_label": "Max Width (px)",
+    "max_width_placeholder": "Auto",
+    "max_width_popover": "Sets the maximum total width of the final image, including borders. The content area will be scaled down to fit within this limit.",
+    "section3_title": "3. Icon & Details",
+    "icon_id_label": "Icon ID",
+    "icon_id_placeholder": "0",
+    "icon_id_popover": "Each style has its own set of icons. Use the picker button to see all available icons and their IDs for the selected style.",
+    "cross_enabled_label": "Cross Enabled",
+    "cross_enabled_popover": "Determines whether the close button (cross) in the window's title bar is rendered as active or disabled.",
+    "section4_title": "4. Button Constructor",
+    "add_new_button": "Add New Button",
+    "section5_title": "5. Button Layout",
+    "alignment_label": "Alignment",
+    "alignment_popover": "Controls the horizontal alignment of the entire button block. The 'Auto' option uses the default alignment defined by the selected style, while other options force a specific layout.",
+    "alignment_auto": "Auto",
+    "alignment_left": "Left",
+    "alignment_center": "Center",
+    "alignment_right": "Right",
+    "autosort_label": "Auto-sort Buttons",
+    "autosort_popover": "When enabled, buttons are automatically arranged based on their type in an order predefined by the style (e.g., Recommended, then Default, then Disabled). Disable this to allow manual drag-and-drop sorting."
+  },
+  "button_dialog": {
+    "title_edit": "Edit Button",
+    "title_add": "Add New Button",
+    "text_label": "Text",
+    "type_label": "Type",
+    "mnemonic_label": "Mnemonic",
+    "mnemonic_popover": "When enabled, draws an underline under the first character of the button's text to indicate it as a hotkey.",
+    "no_types_supported": "No types supported",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "icon_picker": {
+    "title": "Select an Icon for '{{styleId}}'"
+  },
+  "preview_panel": {
+    "generating_single": "Generating image...",
+    "generating_batch": "Generating archive...",
+    "preview_here": "Preview will be shown here",
+    "no_preview_batch": "Batch mode: Preview is not available"
+  },
+  "about_dialog": {
+    "title": "Winerr.NET WebUI",
+    "version": "Version",
+    "description": "A powerful web-based editor for Winerr.NET.",
+    "created_by": "Created by <1>DimaYastrebov</1>.",
+    "github_repo": "GitHub Repository"
+  },
+  "server_down": {
+    "title": "Server Unavailable",
+    "description": "Could not connect to the Winerr.NET server. The application cannot function without it. Please ensure the server is running and accessible.",
+    "reload_button": "Reload",
+    "checking_button": "Checking..."
+  },
+  "toasts": {
+    "session_restored_title": "Session restored",
+    "session_restored_desc": "Your previous work has been loaded.",
+    "import_success": "Configuration imported successfully!",
+    "import_fail_title": "Failed to import configuration",
+    "import_fail_desc": "The selected file is either not a valid JSON or has an incorrect structure.",
+    "session_cleared_title": "Session cleared",
+    "session_cleared_desc": "The page will now reload.",
+    "copy_fail_title": "Nothing to copy",
+    "copy_fail_desc": "Generate an image first.",
+    "copy_success": "Image copied to clipboard!",
+    "copy_unsupported_title": "Copy failed",
+    "copy_unsupported_desc": "Your browser might not support this feature.",
+    "download_fail_title": "Nothing to download",
+    "download_fail_desc": "Generate an image first.",
+    "generate_fail_title": "Image Generation Failed",
+    "batch_success_title": "Batch generation complete",
+    "batch_success_desc": "Your archive has been downloaded.",
+    "batch_fail_title": "Batch Generation Failed"
+  }
+}
