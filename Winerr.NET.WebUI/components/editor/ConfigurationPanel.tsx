@@ -1,11 +1,15 @@
 "use client";
 
-import React, { useRef, useState } from "react";
-import { DndContext, closestCenter, type DragEndEvent, PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core";
+import React, { useState, useEffect, useCallback } from "react";
+import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { XCircle, Anvil, PlusCircle, Trash2, ChevronDown, Upload, Download as DownloadIcon, Copy, GripVertical } from "lucide-react";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
+import { toast } from "sonner";
+
+import { useEditorStore } from "@/stores/editor-store";
+import { useGenerateImage, useGenerateBatch, useGetStyleDetails } from "@/api/queries";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
@@ -17,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 
-import { ErrorConfig, ArchiveFormat } from "@/app/page";
+import { ErrorConfig, ArchiveFormat, GenerateRequestBody } from "@/lib/types";
 import { IconPickerDialog } from "./IconPickerDialog";
 import { ButtonDialog, ButtonConfig } from "./ButtonConstructor";
 import { ErrorInstance } from "./ErrorInstance";
@@ -77,40 +81,44 @@ const SortableInstanceItem: React.FC<SortableInstanceItemProps> = (props) => {
     );
 };
 
-
 interface ConfigurationPanelProps {
     styles: SystemStyle[];
     isLoading: boolean;
-    isGenerating: boolean;
-    onGenerate: () => void;
-    onCopy: () => void;
-    onDownload: () => void;
-    isImageReady: boolean;
-    onExport: () => void;
     onImport: (event: React.ChangeEvent<HTMLInputElement>) => void;
-    mode: 'single' | 'batch';
-    setMode: (mode: 'single' | 'batch') => void;
-    errorInstances: ErrorConfig[];
-    updateInstance: (id: string, newConfig: Partial<ErrorConfig['config']>) => void;
-    updateInstanceName: (id: string, newName: string) => void;
-    addInstance: () => void;
-    deleteInstance: (id: string) => void;
-    onInstancesDragEnd: (event: DragEndEvent) => void;
-    batchSettings: { format: ArchiveFormat, compression: number };
-    setBatchSettings: (settings: { format: ArchiveFormat, compression: number }) => void;
+    importInputRef: React.RefObject<HTMLInputElement | null>;
 }
 
-export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
-    styles, isLoading, isGenerating, onGenerate, onCopy, onDownload, isImageReady, onExport, onImport,
-    mode, setMode, errorInstances, updateInstance, updateInstanceName, addInstance, deleteInstance,
-    onInstancesDragEnd, batchSettings, setBatchSettings
+const ConfigurationPanelFC: React.FC<ConfigurationPanelProps> = ({
+    styles, isLoading, onImport, importInputRef
 }) => {
+    const {
+        mode, setMode, errorInstances, batchSettings, setBatchSettings,
+        updateInstance, updateInstanceName, addInstance,
+        deleteInstance: deleteStoreInstance, handleInstancesDragEnd,
+        generatedImageBlob, generatedImageUrl
+    } = useEditorStore();
+
+    const generateImageMutation = useGenerateImage();
+    const generateBatchMutation = useGenerateBatch();
+    const isGenerating = generateImageMutation.isPending || generateBatchMutation.isPending;
+
     const [activeDialogs, setActiveDialogs] = useState({
         button: { isOpen: false, instanceId: '', buttonData: null as ButtonConfig | null },
         icon: { isOpen: false, instanceId: '' },
     });
-    const importInputRef = useRef<HTMLInputElement>(null);
     const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
+
+    const activeStyleId = errorInstances.find(inst => inst.id === activeDialogs.icon.instanceId)?.config.styleId ?? '';
+    const { data: styleDetails, isLoading: isDetailsLoading } = useGetStyleDetails(activeStyleId);
+
+    useEffect(() => {
+        if (styleDetails) {
+            updateInstance(activeDialogs.icon.instanceId, {
+                maxIconId: styleDetails.max_icon_id,
+                supportedButtonTypes: styleDetails.metrics.supported_button_types,
+            });
+        }
+    }, [styleDetails, activeDialogs.icon.instanceId, updateInstance]);
 
     const openIconPicker = (instanceId: string) => setActiveDialogs(prev => ({ ...prev, icon: { isOpen: true, instanceId } }));
     const openButtonDialog = (instanceId: string, buttonData: ButtonConfig | null) => setActiveDialogs(prev => ({ ...prev, button: { isOpen: true, instanceId, buttonData } }));
@@ -132,6 +140,89 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
         const newButtons = instance.config.buttons.filter(b => b.id !== buttonId);
         updateInstance(instanceId, { buttons: newButtons });
     };
+
+    const handleDeleteInstance = (id: string) => {
+        deleteStoreInstance(id, styles);
+    };
+
+    const handleAddInstance = () => {
+        addInstance(styles);
+    };
+    
+    const handleGenerate = useCallback(() => {
+        if (mode === 'single' && errorInstances[0]) {
+            const { config } = errorInstances[0];
+            const requestBody: GenerateRequestBody = {
+                style_id: config.styleId, title: config.title, content: config.content,
+                icon_id: parseInt(config.iconId, 10) || 0, is_cross_enabled: config.isCrossEnabled,
+                sort_buttons: config.isButtonSortEnabled, buttons: config.buttons.map(({ id, ...rest }) => rest),
+            };
+            if (config.buttonAlignment !== 'Auto') requestBody.button_alignment = config.buttonAlignment;
+            if (config.maxWidth && !isNaN(parseInt(config.maxWidth, 10))) requestBody.max_width = parseInt(config.maxWidth, 10);
+            generateImageMutation.mutate(requestBody);
+        } else if (mode === 'batch') {
+            const batchRequests = errorInstances.map(instance => {
+                const { config } = instance;
+                const requestBody: GenerateRequestBody = {
+                    style_id: config.styleId, title: config.title, content: config.content,
+                    icon_id: parseInt(config.iconId, 10) || 0, is_cross_enabled: config.isCrossEnabled,
+                    sort_buttons: config.isButtonSortEnabled, buttons: config.buttons.map(({ id, ...rest }) => rest),
+                };
+                if (config.buttonAlignment !== 'Auto') requestBody.button_alignment = config.buttonAlignment;
+                if (config.maxWidth && !isNaN(parseInt(config.maxWidth, 10))) requestBody.max_width = parseInt(config.maxWidth, 10);
+                return requestBody;
+            });
+            generateBatchMutation.mutate({ requests: batchRequests, format: batchSettings.format, compression: batchSettings.compression });
+        }
+    }, [mode, errorInstances, batchSettings, generateImageMutation, generateBatchMutation]);
+
+    const handleCopy = useCallback(async () => {
+        if (!generatedImageBlob) {
+            toast.error("Nothing to copy", { description: "Generate an image first." });
+            return;
+        }
+        try {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': generatedImageBlob })]);
+            toast.success("Image copied to clipboard!");
+        } catch (error) {
+            console.error("Failed to copy image:", error);
+            toast.error("Copy failed", { description: "Your browser might not support this feature." });
+        }
+    }, [generatedImageBlob]);
+
+    const handleDownload = useCallback(() => {
+        if (!generatedImageUrl) {
+            toast.error("Nothing to download", { description: "Generate an image first." });
+            return;
+        }
+        const link = document.createElement('a');
+        link.href = generatedImageUrl;
+        link.download = `winerr_net_${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }, [generatedImageUrl]);
+
+    const handleExport = useCallback(() => {
+        const dataToExport = {
+            mode,
+            batchSettings: mode === 'batch' ? batchSettings : undefined,
+            instances: errorInstances.map(({ id, name, config }) => {
+                const { maxIconId, supportedButtonTypes, ...userConfig } = config;
+                return { name, config: userConfig };
+            })
+        };
+        const dataStr = JSON.stringify(dataToExport, null, 2);
+        const dataBlob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `winerr_config_${Date.now()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }, [errorInstances, mode, batchSettings]);
 
     const activeInstanceForDialog = errorInstances.find(i => i.id === activeDialogs.icon.instanceId || i.id === activeDialogs.button.instanceId);
 
@@ -181,11 +272,11 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                     )}
 
                     {mode === 'single' && errorInstances[0] && (
-                        <ErrorInstance instance={errorInstances[0]} styles={styles} isLoading={isLoading} onConfigChange={(newConfig) => updateInstance(errorInstances[0].id, newConfig)} onOpenIconPicker={() => openIconPicker(errorInstances[0].id)} onAddNewButton={() => openButtonDialog(errorInstances[0].id, null)} onEditButton={(btn) => openButtonDialog(errorInstances[0].id, btn)} onDeleteButton={(btnId) => handleDeleteButton(errorInstances[0].id, btnId)} />
+                        <ErrorInstance instance={errorInstances[0]} styles={styles} isLoading={isLoading || isDetailsLoading} onConfigChange={(newConfig) => updateInstance(errorInstances[0].id, newConfig)} onOpenIconPicker={() => openIconPicker(errorInstances[0].id)} onAddNewButton={() => openButtonDialog(errorInstances[0].id, null)} onEditButton={(btn) => openButtonDialog(errorInstances[0].id, btn)} onDeleteButton={(btnId) => handleDeleteButton(errorInstances[0].id, btnId)} />
                     )}
                     {mode === 'batch' && (
                         <div className="space-y-2">
-                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onInstancesDragEnd}>
+                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleInstancesDragEnd}>
                                 <div className="overflow-hidden">
                                     <SortableContext items={errorInstances} strategy={verticalListSortingStrategy}>
                                         <Accordion type="multiple" className="w-full space-y-2">
@@ -195,10 +286,10 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                                                     instance={instance}
                                                     index={index}
                                                     styles={styles}
-                                                    isLoading={isLoading}
+                                                    isLoading={isLoading || isDetailsLoading}
                                                     updateInstance={updateInstance}
                                                     updateInstanceName={updateInstanceName}
-                                                    deleteInstance={deleteInstance}
+                                                    deleteInstance={handleDeleteInstance}
                                                     openIconPicker={openIconPicker}
                                                     openButtonDialog={openButtonDialog}
                                                     handleDeleteButton={handleDeleteButton}
@@ -208,7 +299,7 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                                     </SortableContext>
                                 </div>
                             </DndContext>
-                            <Button variant="outline" className="w-full border-dashed" onClick={addInstance} disabled={isLoading}><PlusCircle className="mr-2 h-4 w-4" /> Add New Error</Button>
+                            <Button variant="outline" className="w-full border-dashed" onClick={handleAddInstance} disabled={isLoading}><PlusCircle className="mr-2 h-4 w-4" /> Add New Error</Button>
                         </div>
                     )}
                 </ScrollArea>
@@ -218,15 +309,15 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                 <Separator className="bg-zinc-800 mb-4" />
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-col gap-2">
-                        <Button className="w-full" disabled={isLoading || isGenerating} onClick={onGenerate}>
+                        <Button className="w-full" disabled={isLoading || isGenerating} onClick={handleGenerate}>
                             <Anvil className="mr-2 h-4 w-4" />{isGenerating ? "Generating..." : (mode === 'batch' ? "Generate & Download" : "Generate")}
                         </Button>
                         {mode === 'single' && (
                             <div className="flex gap-2">
-                                <Button variant="outline" className="flex-1" onClick={onCopy} disabled={isLoading || !isImageReady}>
+                                <Button variant="outline" className="flex-1" onClick={handleCopy} disabled={isLoading || !generatedImageBlob}>
                                     <Copy className="mr-2 h-4 w-4" /> Copy
                                 </Button>
-                                <Button variant="outline" className="flex-1" onClick={onDownload} disabled={isLoading || !isImageReady}>
+                                <Button variant="outline" className="flex-1" onClick={handleDownload} disabled={isLoading || !generatedImageBlob}>
                                     <DownloadIcon className="mr-2 h-4 w-4" /> Download
                                 </Button>
                             </div>
@@ -235,7 +326,7 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                     <div className="flex flex-wrap gap-2">
                         <input type="file" ref={importInputRef} onChange={onImport} accept=".json" className="hidden" />
                         <Button variant="outline" className="flex-1" onClick={() => importInputRef.current?.click()} disabled={isLoading}><Upload className="mr-2 h-4 w-4" /> Import</Button>
-                        <Button variant="outline" className="flex-1" onClick={onExport} disabled={isLoading}><DownloadIcon className="mr-2 h-4 w-4" /> Export</Button>
+                        <Button variant="outline" className="flex-1" onClick={handleExport} disabled={isLoading}><DownloadIcon className="mr-2 h-4 w-4" /> Export</Button>
                     </div>
                 </div>
             </div>
@@ -249,3 +340,5 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
         </div>
     );
 };
+
+export const ConfigurationPanel = React.memo(ConfigurationPanelFC);

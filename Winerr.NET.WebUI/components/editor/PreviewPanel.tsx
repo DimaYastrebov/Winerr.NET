@@ -3,15 +3,18 @@
 import React from "react";
 import { LoaderCircle, Timer, Github } from "lucide-react";
 import { Button } from "../ui/button";
+import { useEditorStore } from "@/stores/editor-store";
+import { useShallow } from 'zustand/react/shallow';
 
-interface PreviewPanelProps {
-    imageUrl: string | null;
-    isGenerating: boolean;
-    mode: 'single' | 'batch';
-    generationTime: number | null;
-}
-
-export const PreviewPanel: React.FC<PreviewPanelProps> = ({ imageUrl, isGenerating, mode, generationTime }) => {
+export const PreviewPanel: React.FC = () => {
+    const { imageUrl, isGenerating, mode, generationTime } = useEditorStore(
+        useShallow((state) => ({
+            imageUrl: state.generatedImageUrl,
+            isGenerating: state.isGenerating,
+            mode: state.mode,
+            generationTime: state.generationTime,
+        }))
+    );
 
     const renderContent = () => {
         if (isGenerating) {
