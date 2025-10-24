@@ -18,7 +18,7 @@ export function AppMenubar({
     onOpenAbout,
 }: AppMenubarProps) {
     return (
-        <Menubar className="rounded-none border-b border-zinc-800 bg-zinc-900 px-2 lg:px-4">
+        <Menubar className="rounded-none border-0 border-b border-zinc-800 bg-black px-2 lg:px-4">
             <MenubarMenu>
                 <MenubarTrigger>File</MenubarTrigger>
                 <MenubarContent>

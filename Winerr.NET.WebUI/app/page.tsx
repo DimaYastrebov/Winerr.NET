@@ -67,41 +67,39 @@ const Home = () => {
                         onOpenAbout={() => setIsAboutDialogOpen(true)}
                     />
 
-                    <div className="flex-1 overflow-hidden p-4">
-                        <ResizablePanelGroup direction={isMobile ? "vertical" : "horizontal"} className="h-full w-full max-w-7xl mx-auto bg-zinc-900 rounded-xl shadow-lg border border-zinc-800">
-                            {isMobile ? (
-                                <>
-                                    <ResizablePanel defaultSize={60}>
-                                        <PreviewPanel />
-                                    </ResizablePanel>
-                                    <ResizableHandle withHandle />
-                                    <ResizablePanel defaultSize={40} minSize={25} maxSize={80}>
-                                        <ConfigurationPanel
-                                            styles={styles}
-                                            isLoading={isLoadingStyles}
-                                            onImport={handleImport}
-                                            importInputRef={importInputRef}
-                                        />
-                                    </ResizablePanel>
-                                </>
-                            ) : (
-                                <>
-                                    <ResizablePanel defaultSize={27} minSize={25} maxSize={40}>
-                                        <ConfigurationPanel
-                                            styles={styles}
-                                            isLoading={isLoadingStyles}
-                                            onImport={handleImport}
-                                            importInputRef={importInputRef}
-                                        />
-                                    </ResizablePanel>
-                                    <ResizableHandle withHandle />
-                                    <ResizablePanel defaultSize={73}>
-                                        <PreviewPanel />
-                                    </ResizablePanel>
-                                </>
-                            )}
-                        </ResizablePanelGroup>
-                    </div>
+                    <ResizablePanelGroup direction={isMobile ? "vertical" : "horizontal"} className="flex-1">
+                        {isMobile ? (
+                            <>
+                                <ResizablePanel defaultSize={60}>
+                                    <PreviewPanel />
+                                </ResizablePanel>
+                                <ResizableHandle withHandle />
+                                <ResizablePanel defaultSize={40} minSize={25} maxSize={80}>
+                                    <ConfigurationPanel
+                                        styles={styles}
+                                        isLoading={isLoadingStyles}
+                                        onImport={handleImport}
+                                        importInputRef={importInputRef}
+                                    />
+                                </ResizablePanel>
+                            </>
+                        ) : (
+                            <>
+                                <ResizablePanel defaultSize={27} minSize={25} maxSize={40}>
+                                    <ConfigurationPanel
+                                        styles={styles}
+                                        isLoading={isLoadingStyles}
+                                        onImport={handleImport}
+                                        importInputRef={importInputRef}
+                                    />
+                                </ResizablePanel>
+                                <ResizableHandle withHandle />
+                                <ResizablePanel defaultSize={73}>
+                                    <PreviewPanel />
+                                </ResizablePanel>
+                            </>
+                        )}
+                    </ResizablePanelGroup>
                 </>
             )}
         </main>
