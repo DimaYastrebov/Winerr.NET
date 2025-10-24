@@ -85,7 +85,8 @@ namespace Winerr.NET.Core.Enums
                 IconPaddingRight = 10,
                 TextPaddingRight = 9,
                 TextPaddingTop = 16,
-                TextPaddingBottom = 16
+                TextPaddingBottom = 16,
+                DefaultMaxWidth = 1024
             });
 
         public static readonly SystemStyle Windows7Architecture = new("Win7_Architecture", "Windows 7 (Architecture)",

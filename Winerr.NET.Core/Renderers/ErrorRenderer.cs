@@ -2,7 +2,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using Winerr.NET.Core.Configs;
-using Winerr.NET.Core.Enums;    
+using Winerr.NET.Core.Enums;
 using Winerr.NET.Core.Interfaces;
 using Winerr.NET.Core.Managers;
 
@@ -13,30 +13,33 @@ namespace Winerr.NET.Core.Renderers
         public Image<Rgba32> Generate(ErrorConfig config)
         {
             var style = config.SystemStyle;
+            var metrics = style.Metrics;
             var am = AssetManager.Instance;
 
+            var leftBorder = am.GetStyleImage(style, AssetKeys.FrameParts.MiddleLeft) ?? throw new FileNotFoundException("middle_left sprite not found");
+            var rightBorder = am.GetStyleImage(style, AssetKeys.FrameParts.MiddleRight) ?? throw new FileNotFoundException("middle_right sprite not found");
+
+            int minWidth = leftBorder.Width + metrics.IconPaddingLeft + metrics.ExpectedIconSize.Width + metrics.IconPaddingRight + rightBorder.Width;
 
             var contentRenderer = new ContentAreaRenderer(
                 text: config.Content,
                 iconId: config.IconId,
                 style: style,
-                maxWidth: config.MaxWidth,
+                maxWidth: null,
                 wrapMode: TextWrapMode.Auto
             );
-            var contentSize = contentRenderer.MeasureContentArea();
-
             var buttonAreaRenderer = new ButtonAreaRenderer();
-            var buttonAreaSize = buttonAreaRenderer.MeasureButtonArea(config.Buttons, style, config.SortButtons);
 
-            int finalContentWidth = Math.Max(contentSize.Width, buttonAreaSize.Width);
-            if (config.MaxWidth.HasValue)
-            {
-                var leftBorder = am.GetStyleImage(style, AssetKeys.FrameParts.MiddleLeft) ?? throw new FileNotFoundException("middle_left sprite not found");
-                var rightBorder = am.GetStyleImage(style, AssetKeys.FrameParts.MiddleRight) ?? throw new FileNotFoundException("middle_right sprite not found");
-                int maxInnerWidth = config.MaxWidth.Value - leftBorder.Width - rightBorder.Width;
-                if (maxInnerWidth < 0) maxInnerWidth = 0;
-                finalContentWidth = Math.Min(finalContentWidth, maxInnerWidth);
-            }
+            var naturalContentSize = contentRenderer.MeasureContentArea();
+            var naturalButtonAreaSize = buttonAreaRenderer.MeasureButtonArea(config.Buttons, style, config.SortButtons);
+
+            int naturalContentWidth = Math.Max(naturalContentSize.Width, naturalButtonAreaSize.Width);
+            int naturalTotalWidth = naturalContentWidth + leftBorder.Width + rightBorder.Width;
+
+            int? limit = config.MaxWidth ?? metrics.DefaultMaxWidth;
+            int widthWithLimit = limit.HasValue ? Math.Min(naturalTotalWidth, limit.Value) : naturalTotalWidth;
+            int finalTotalWidth = Math.Max(widthWithLimit, minWidth);
+            int finalContentWidth = Math.Max(0, finalTotalWidth - leftBorder.Width - rightBorder.Width);
 
             using var finalContentResult = contentRenderer.DrawContentArea(forcedWidth: finalContentWidth);
 

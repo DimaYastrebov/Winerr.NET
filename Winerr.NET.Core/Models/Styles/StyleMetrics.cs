@@ -50,6 +50,8 @@ namespace Winerr.NET.Core.Models.Styles
         public int TextPaddingBottom { get; set; }
         public float LineSpacing { get; set; }
 
+        public int? DefaultMaxWidth { get; set; }
+
         public ShadowConfig? Shadow { get; set; }
 
         public FontSet WindowTitleFontSet => _windowTitleFontSet ??= AssetManager.Instance.GetFontSet(WindowTitleFontName, WindowTitleFontSizeKey, WindowTitleFontVariation) ?? throw new InvalidOperationException($"Font '{WindowTitleFontName}' (size key: '{WindowTitleFontSizeKey}', variation: '{WindowTitleFontVariation}') not found.");
