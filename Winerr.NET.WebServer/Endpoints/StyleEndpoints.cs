@@ -10,7 +10,9 @@ namespace Winerr.NET.WebServer.Endpoints
 {
     public record StyleShortDto(
         [property: JsonPropertyName("id")] string Id,
-        [property: JsonPropertyName("display_name")] string DisplayName
+        [property: JsonPropertyName("display_name")] string DisplayName,
+        [property: JsonPropertyName("system_family")] string SystemFamily,
+        [property: JsonPropertyName("theme_name")] string ThemeName
     );
 
     public record StyleDetailsDto
@@ -73,7 +75,7 @@ namespace Winerr.NET.WebServer.Endpoints
 
                 var styles = SystemStyle.List()
                     .Where(s => s != null)
-                    .Select(s => new StyleShortDto(s!.Id, s.DisplayName));
+                    .Select(s => new StyleShortDto(s!.Id, s.DisplayName, s.SystemFamily, s.ThemeName));
 
                 var response = ApiResponseFactory.CreateSuccess(styles, "style.list", stopwatch);
                 return Results.Ok(response);

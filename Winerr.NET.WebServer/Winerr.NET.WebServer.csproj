@@ -7,9 +7,9 @@
 
         <Title>Winerr.NET Web Server</Title>
         <Major>0</Major>
-        <Minor>5</Minor>
-        <Patch>2</Patch>
-        <BuildNumber>93</BuildNumber>
+        <Minor>6</Minor>
+        <Patch>0</Patch>
+        <BuildNumber>96</BuildNumber>
         <VersionSuffix></VersionSuffix>
 
         <FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>

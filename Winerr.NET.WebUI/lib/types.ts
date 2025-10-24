@@ -3,6 +3,8 @@ import { type ButtonConfig as ButtonConstructorConfig } from "@/components/edito
 export interface SystemStyle {
     id: string;
     display_name: string;
+    system_family: string;
+    theme_name: string;
 }
 
 export type ButtonAlignment = 'Auto' | 'Left' | 'Center' | 'Right';

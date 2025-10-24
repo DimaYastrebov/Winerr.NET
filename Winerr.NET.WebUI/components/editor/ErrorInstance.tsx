@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { DndContext, closestCenter, type DragEndEvent, PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { PlusCircle, Image as ImageIcon } from "lucide-react";
@@ -14,13 +14,11 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { ButtonAlignment, ErrorConfig } from "@/lib/types";
+import { ButtonAlignment, ErrorConfig, SystemStyle } from "@/lib/types";
 import { SortableButton, ButtonConfig } from "./ButtonConstructor";
 import { FormField } from "./FormField";
 import { Combobox, ComboboxOption } from "@/components/ui/combobox";
 import { InfoPopover } from "./InfoPopover";
-
-interface SystemStyle { id: string; display_name: string; }
 
 interface ErrorInstanceProps {
     instance: ErrorConfig;
@@ -39,6 +37,30 @@ const ErrorInstanceFC: React.FC<ErrorInstanceProps> = ({
 }) => {
     const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
     const { config } = instance;
+
+    const [selectedSystem, setSelectedSystem] = useState<string | null>(null);
+
+    const groupedStyles = useMemo(() => {
+        const map = new Map<string, SystemStyle[]>();
+        styles.forEach(style => {
+            const family = style.system_family;
+            if (!map.has(family)) {
+                map.set(family, []);
+            }
+            map.get(family)!.push(style);
+        });
+        return map;
+    }, [styles]);
+
+    useEffect(() => {
+        if (config.styleId && styles.length > 0) {
+            const currentStyle = styles.find(s => s.id === config.styleId);
+            if (currentStyle && currentStyle.system_family !== selectedSystem) {
+                setSelectedSystem(currentStyle.system_family);
+            }
+        }
+    }, [config.styleId, styles, selectedSystem]);
+
 
     const { data: styleDetails, isLoading: isDetailsLoading } = useGetStyleDetails(config.styleId);
 
@@ -89,10 +111,23 @@ const ErrorInstanceFC: React.FC<ErrorInstanceProps> = ({
         onConfigChange({ iconId: clampedValue.toString() });
     };
 
-    const styleOptions: ComboboxOption[] = styles.map(style => ({
-        value: style.id,
-        label: style.display_name,
+    const systemOptions: ComboboxOption[] = Array.from(groupedStyles.keys()).map(family => ({
+        value: family,
+        label: family,
     }));
+
+    const themeOptions: ComboboxOption[] = selectedSystem ? (groupedStyles.get(selectedSystem) || []).map(style => ({
+        value: style.id,
+        label: style.theme_name,
+    })) : [];
+
+    const handleSystemChange = (systemFamily: string) => {
+        setSelectedSystem(systemFamily);
+        const firstTheme = groupedStyles.get(systemFamily)?.[0];
+        if (firstTheme) {
+            onConfigChange({ styleId: firstTheme.id });
+        }
+    };
 
     const isBusy = isLoading || isDetailsLoading;
 
@@ -101,17 +136,45 @@ const ErrorInstanceFC: React.FC<ErrorInstanceProps> = ({
             <AccordionItem value="item-1">
                 <AccordionTrigger className="text-base font-semibold text-zinc-300">1. Select Style</AccordionTrigger>
                 <AccordionContent>
-                    <div className="grid w-full items-center gap-1.5 p-2">
-                        <Label htmlFor={`style-${instance.id}`} className="text-zinc-400">Select a style</Label>
+                    <div className="grid w-full items-center gap-2 p-2">
                         {isLoading ? (
-                            <Skeleton className="h-9 w-full" />
+                            <>
+                                <Skeleton className="h-9 w-full" />
+                                <Skeleton className="h-9 w-full" />
+                            </>
                         ) : (
-                            <Combobox
-                                options={styleOptions}
-                                value={config.styleId}
-                                onChange={(styleId) => onConfigChange({ styleId })}
-                                placeholder="Select a style..."
-                            />
+                            <>
+                                <div className="flex w-full items-start gap-3">
+                                    {isLoading ? (
+                                        <>
+                                            <Skeleton className="h-9 flex-1" />
+                                            <Skeleton className="h-9 flex-1" />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="grid w-full items-center gap-1.5 flex-1">
+                                                <Label htmlFor={`system-${instance.id}`} className="text-zinc-400">Operating System</Label>
+                                                <Combobox
+                                                    options={systemOptions}
+                                                    value={selectedSystem || ""}
+                                                    onChange={handleSystemChange}
+                                                    placeholder="Select an OS..."
+                                                />
+                                            </div>
+                                            <div className="grid w-full items-center gap-1.5 flex-1">
+                                                <Label htmlFor={`theme-${instance.id}`} className="text-zinc-400">Theme</Label>
+                                                <Combobox
+                                                    options={themeOptions}
+                                                    value={config.styleId}
+                                                    onChange={(styleId) => onConfigChange({ styleId })}
+                                                    placeholder="Select a theme..."
+                                                    className={!selectedSystem ? "opacity-50 cursor-not-allowed" : ""}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </>
                         )}
                     </div>
                 </AccordionContent>
