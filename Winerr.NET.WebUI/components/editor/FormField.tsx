@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-interface FormFieldProps {
+interface FormFieldProps extends React.PropsWithChildren {
     id: string;
     label: string;
     value: string;
@@ -30,6 +30,7 @@ const FormFieldComponent: React.FC<FormFieldProps> = ({
     className,
     labelClassName,
     inputClassName,
+    children,
     ...props
 }) => {
     const [internalValue, setInternalValue] = useState(propValue);
@@ -59,9 +60,11 @@ const FormFieldComponent: React.FC<FormFieldProps> = ({
     return (
         <div className={cn("grid w-full items-center gap-1.5", className)}>
 
-            <Label htmlFor={id} className={cn("text-zinc-400", labelClassName)}>
-                {label}
-            </Label>
+            {children ? children : (
+                <Label htmlFor={id} className={cn("text-zinc-400", labelClassName)}>
+                    {label}
+                </Label>
+            )}
 
             <InputComponent
                 id={id}

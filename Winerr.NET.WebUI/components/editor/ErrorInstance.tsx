@@ -1,9 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { DndContext, closestCenter, type DragEndEvent, PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { PlusCircle, Image as ImageIcon } from "lucide-react";
+
+import { useGetStyleDetails } from "@/api/queries";
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -12,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { ButtonAlignment, ErrorConfig } from "@/app/page";
+import { ButtonAlignment, ErrorConfig } from "@/lib/types";
 import { SortableButton, ButtonConfig } from "./ButtonConstructor";
 import { FormField } from "./FormField";
 import { Combobox, ComboboxOption } from "@/components/ui/combobox";
@@ -31,12 +33,41 @@ interface ErrorInstanceProps {
     onDeleteButton: (buttonId: string) => void;
 }
 
-export const ErrorInstance: React.FC<ErrorInstanceProps> = ({
+const ErrorInstanceFC: React.FC<ErrorInstanceProps> = ({
     instance, styles, isLoading, onConfigChange, onOpenIconPicker,
     onAddNewButton, onEditButton, onDeleteButton
 }) => {
     const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
     const { config } = instance;
+
+    const { data: styleDetails, isLoading: isDetailsLoading } = useGetStyleDetails(config.styleId);
+
+    useEffect(() => {
+        if (styleDetails) {
+            const updates: Partial<ErrorConfig['config']> = {};
+            let needsUpdate = false;
+
+            if (instance.config.maxIconId !== styleDetails.max_icon_id) {
+                updates.maxIconId = styleDetails.max_icon_id;
+                const currentIconId = parseInt(instance.config.iconId, 10);
+                if (currentIconId > styleDetails.max_icon_id) {
+                    updates.iconId = styleDetails.max_icon_id.toString();
+                }
+                needsUpdate = true;
+            }
+
+            const supportedTypes = styleDetails.metrics.supported_button_types || [];
+            if (JSON.stringify(instance.config.supportedButtonTypes) !== JSON.stringify(supportedTypes)) {
+                updates.supportedButtonTypes = supportedTypes;
+                needsUpdate = true;
+            }
+
+            if (needsUpdate) {
+                onConfigChange(updates);
+            }
+        }
+    }, [styleDetails, instance.config, onConfigChange]);
+
 
     const handleButtonsDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
@@ -52,12 +83,8 @@ export const ErrorInstance: React.FC<ErrorInstanceProps> = ({
             onConfigChange({ iconId: "" });
             return;
         }
-
         const numValue = parseInt(value, 10);
-        if (isNaN(numValue)) {
-            return;
-        }
-
+        if (isNaN(numValue)) return;
         const clampedValue = Math.max(0, Math.min(numValue, config.maxIconId));
         onConfigChange({ iconId: clampedValue.toString() });
     };
@@ -67,9 +94,10 @@ export const ErrorInstance: React.FC<ErrorInstanceProps> = ({
         label: style.display_name,
     }));
 
+    const isBusy = isLoading || isDetailsLoading;
+
     return (
         <Accordion type="multiple" defaultValue={["item-1", "item-2", "item-3", "item-4", "item-5"]} className="w-full space-y-2">
-
             <AccordionItem value="item-1">
                 <AccordionTrigger className="text-base font-semibold text-zinc-300">1. Select Style</AccordionTrigger>
                 <AccordionContent>
@@ -93,7 +121,7 @@ export const ErrorInstance: React.FC<ErrorInstanceProps> = ({
                 <AccordionTrigger className="text-base font-semibold text-zinc-300">2. Main Content</AccordionTrigger>
                 <AccordionContent>
                     <div className="grid w-full items-center gap-4 p-2">
-                        {isLoading ? (
+                        {isBusy ? (
                             <>
                                 <Skeleton className="h-9 w-full" />
                                 <Skeleton className="min-h-[100px] w-full" />
@@ -125,7 +153,12 @@ export const ErrorInstance: React.FC<ErrorInstanceProps> = ({
                                     onDebouncedChange={(maxWidth) => onConfigChange({ maxWidth })}
                                     placeholder="Auto"
                                     min={0}
-                                />
+                                >
+                                    <InfoPopover
+                                        label="Max Width (px)"
+                                        popoverContent="Sets the maximum total width of the final image, including borders. The content area will be scaled down to fit within this limit."
+                                    />
+                                </FormField>
                             </>
                         )}
                     </div>
@@ -136,7 +169,7 @@ export const ErrorInstance: React.FC<ErrorInstanceProps> = ({
                 <AccordionTrigger className="text-base font-semibold text-zinc-300">3. Icon & Details</AccordionTrigger>
                 <AccordionContent>
                     <div className="flex items-end justify-between p-2 gap-4">
-                        {isLoading ? (
+                        {isBusy ? (
                             <Skeleton className="h-9 w-full" />
                         ) : (
                             <div className="flex items-end gap-2 w-full">
@@ -150,15 +183,26 @@ export const ErrorInstance: React.FC<ErrorInstanceProps> = ({
                                     max={config.maxIconId}
                                     placeholder="0"
                                     className="flex-grow"
-                                />
+                                >
+                                    <InfoPopover
+                                        label="Icon ID"
+                                        popoverContent="Each style has its own set of icons. Use the picker button to see all available icons and their IDs for the selected style."
+                                    />
+                                </FormField>
                                 <Button variant="outline" size="icon" className="bg-zinc-800 border-zinc-700 hover:bg-zinc-700 flex-shrink-0" onClick={onOpenIconPicker}>
                                     <ImageIcon className="h-4 w-4" />
                                 </Button>
                             </div>
                         )}
                         <div className="flex items-center space-x-2 pb-2 flex-shrink-0">
-                            {isLoading ? (<Skeleton className="h-4 w-4" />) : (<Checkbox id={`cross-${instance.id}`} checked={config.isCrossEnabled} onCheckedChange={(c) => onConfigChange({ isCrossEnabled: c as boolean })} />)}
-                            <Label htmlFor={`cross-${instance.id}`} className="text-zinc-400 whitespace-nowrap">Cross Enabled?</Label>
+                            {isBusy ? (<Skeleton className="h-4 w-4" />) : (
+                                <InfoPopover
+                                    htmlFor={`cross-${instance.id}`}
+                                    label="Cross Enabled"
+                                    popoverContent="Determines whether the close button (cross) in the window's title bar is rendered as active or disabled."
+                                />
+                            )}
+                            <Checkbox id={`cross-${instance.id}`} checked={config.isCrossEnabled} onCheckedChange={(c) => onConfigChange({ isCrossEnabled: c as boolean })} />
                         </div>
                     </div>
                 </AccordionContent>
@@ -178,7 +222,7 @@ export const ErrorInstance: React.FC<ErrorInstanceProps> = ({
                                     </div>
                                 )}
                             </SortableContext>
-                            <Button variant="outline" className="w-full border-dashed" onClick={onAddNewButton} disabled={isLoading}>
+                            <Button variant="outline" className="w-full border-dashed" onClick={onAddNewButton} disabled={isBusy}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Add New Button
                             </Button>
                         </div>
@@ -206,14 +250,15 @@ export const ErrorInstance: React.FC<ErrorInstanceProps> = ({
                             <InfoPopover
                                 htmlFor={`auto-sort-${instance.id}`}
                                 label="Auto-sort Buttons"
-                                popoverContent="When enabled, buttons are automatically arranged in an order predefined by the selected style (e.g., 'OK', 'Cancel', 'Yes', 'No'). Disable this to allow manual drag-and-drop sorting."
+                                popoverContent="When enabled, buttons are automatically arranged based on their type in an order predefined by the style (e.g., Recommended, then Default, then Disabled). Disable this to allow manual drag-and-drop sorting."
                             />
                             <Switch id={`auto-sort-${instance.id}`} checked={config.isButtonSortEnabled} onCheckedChange={(c) => onConfigChange({ isButtonSortEnabled: c })} />
                         </div>
                     </div>
                 </AccordionContent>
             </AccordionItem>
-
         </Accordion>
     );
 };
+
+export const ErrorInstance = React.memo(ErrorInstanceFC);
