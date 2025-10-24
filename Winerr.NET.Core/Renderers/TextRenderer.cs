@@ -134,6 +134,7 @@ namespace Winerr.NET.Core.Renderers
         {
             var finalImage = new Image<Rgba32>(width, height);
             var metrics = _fontSet.Metrics!;
+            var textWrapper = _textWrapper!;
 
             if (!_fontSet.PrecutGlyphs.TryGetValue(variationName, out var precutGlyphs))
             {
@@ -158,7 +159,7 @@ namespace Winerr.NET.Core.Renderers
 
                         if (FontVariations.ColorMap.TryGetValue(baseVariationName, out var lineColor))
                         {
-                            if (metrics.Characters.TryGetValue(line[0], out var firstChar))
+                            if (textWrapper.TryGetCharacter(line[0], out var firstChar) && firstChar != null)
                             {
                                 int lineY = drawLineY + metrics.LineHeight - 2;
 
@@ -177,21 +178,30 @@ namespace Winerr.NET.Core.Renderers
                     for (int j = 0; j < line.Length; j++)
                     {
                         char c = line[j];
-                        if (!metrics.Characters.TryGetValue(c, out var fontChar)) continue;
 
-                        if (precutGlyphs.TryGetValue(fontChar.Id, out var charSprite))
+                        if (textWrapper.TryGetCharacter(c, out var fontChar) && fontChar != null)
                         {
-                            var location = new Point(
-                                (drawCursorX + fontChar.Offset.X),
-                                (drawLineY + fontChar.Offset.Y)
-                            );
-                            ctx.DrawImage(charSprite, location, _fastDrawOptions);
+                            if (precutGlyphs.TryGetValue(fontChar.Id, out var charSprite))
+                            {
+                                var location = new Point(
+                                    (drawCursorX + fontChar.Offset.X),
+                                    (drawLineY + fontChar.Offset.Y)
+                                );
+                                ctx.DrawImage(charSprite, location, _fastDrawOptions);
+                            }
+
+                            drawCursorX += fontChar.XAdvance;
+                            if (j < line.Length - 1)
+                            {
+                                drawCursorX += metrics.GetKerning(c, line[j + 1]);
+                            }
                         }
-
-                        drawCursorX += fontChar.XAdvance;
-                        if (j < line.Length - 1)
+                        else
                         {
-                            drawCursorX += metrics.GetKerning(c, line[j + 1]);
+                            if (textWrapper.TryGetCharacter(' ', out var spaceChar) && spaceChar != null)
+                            {
+                                drawCursorX += spaceChar.XAdvance;
+                            }
                         }
                     }
                     drawLineY += metrics.LineHeight;
