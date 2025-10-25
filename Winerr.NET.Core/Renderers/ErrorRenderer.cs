@@ -19,8 +19,6 @@ namespace Winerr.NET.Core.Renderers
             var leftBorder = am.GetStyleImage(style, AssetKeys.FrameParts.MiddleLeft) ?? throw new FileNotFoundException("middle_left sprite not found");
             var rightBorder = am.GetStyleImage(style, AssetKeys.FrameParts.MiddleRight) ?? throw new FileNotFoundException("middle_right sprite not found");
 
-            int minWidth = leftBorder.Width + metrics.IconPaddingLeft + metrics.ExpectedIconSize.Width + metrics.IconPaddingRight + rightBorder.Width;
-
             var contentRenderer = new ContentAreaRenderer(
                 text: config.Content,
                 iconId: config.IconId,
@@ -32,6 +30,15 @@ namespace Winerr.NET.Core.Renderers
 
             var naturalContentSize = contentRenderer.MeasureContentArea();
             var naturalButtonAreaSize = buttonAreaRenderer.MeasureButtonArea(config.Buttons, style, config.SortButtons);
+
+            int minWidthForIcon = leftBorder.Width + metrics.IconPaddingLeft + metrics.ExpectedIconSize.Width + metrics.IconPaddingRight + rightBorder.Width;
+            int minWidthForButtons = 0;
+            if (naturalButtonAreaSize.Width > 0)
+            {
+                minWidthForButtons = naturalButtonAreaSize.Width + leftBorder.Width + rightBorder.Width;
+            }
+
+            int minWidth = Math.Max(minWidthForIcon, minWidthForButtons);
 
             int naturalContentWidth = Math.Max(naturalContentSize.Width, naturalButtonAreaSize.Width);
             int naturalTotalWidth = naturalContentWidth + leftBorder.Width + rightBorder.Width;
