@@ -260,7 +260,7 @@ const ErrorInstanceFC: React.FC<ErrorInstanceProps> = ({
                                     popoverContent={t('error_instance.cross_enabled_popover')}
                                 />
                             )}
-                            <Checkbox id={`cross-${instance.id}`} checked={config.isCrossEnabled} onCheckedChange={(c) => onConfigChange({ isCrossEnabled: c as boolean })} />
+                            <Checkbox id={`cross-${instance.id}`} checked={config.isCrossEnabled} onCheckedChange={(c) => onConfigChange({ isCrossEnabled: c as boolean })} disabled={isBusy} />
                         </div>
                     </div>
                 </AccordionContent>
