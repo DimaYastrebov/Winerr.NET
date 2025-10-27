@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 
 namespace Winerr.NET.AssetGenerator
@@ -23,9 +24,10 @@ namespace Winerr.NET.AssetGenerator
             foreach (var glyph in glyphs.OrderBy(g => g.Metrics.Id))
             {
                 var m = glyph.Metrics;
+                var hexId = ConvertStringToHexId(m.Id);
 
                 var charAttributes = new StringBuilder();
-                charAttributes.Append($"id=\"{m.Id}\" ");
+                charAttributes.Append($"id=\"{hexId}\" ");
                 charAttributes.Append($"x=\"{m.Source.X}\" y=\"{m.Source.Y}\" ");
                 charAttributes.Append($"width=\"{m.Source.Width}\" height=\"{m.Source.Height}\" ");
                 charAttributes.Append($"xoffset=\"{m.Offset.X}\" yoffset=\"{m.Offset.Y}\" ");
@@ -39,6 +41,30 @@ namespace Winerr.NET.AssetGenerator
             sb.AppendLine("  <kernings count=\"0\"/>");
             sb.AppendLine("</font>");
 
+            return sb.ToString();
+        }
+
+        private static string ConvertStringToHexId(string character)
+        {
+            if (string.IsNullOrEmpty(character)) return "";
+
+            var sb = new StringBuilder();
+            var enumerator = StringInfo.GetTextElementEnumerator(character);
+            while (enumerator.MoveNext())
+            {
+                string grapheme = enumerator.GetTextElement();
+                if (string.IsNullOrEmpty(grapheme)) continue;
+
+                var runes = grapheme.EnumerateRunes().ToList();
+                for (int i = 0; i < runes.Count; i++)
+                {
+                    sb.Append($"{runes[i].Value:X}");
+                    if (i < runes.Count - 1)
+                    {
+                        sb.Append(" ");
+                    }
+                }
+            }
             return sb.ToString();
         }
     }

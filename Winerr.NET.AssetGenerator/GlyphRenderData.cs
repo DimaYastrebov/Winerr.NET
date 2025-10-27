@@ -4,10 +4,10 @@ namespace Winerr.NET.AssetGenerator
 {
     public class GlyphRenderData
     {
-        public char Character { get; }
+        public string Character { get; }
         public FontChar Metrics { get; }
 
-        public GlyphRenderData(char character, FontChar metrics)
+        public GlyphRenderData(string character, FontChar metrics)
         {
             Character = character;
             Metrics = metrics;

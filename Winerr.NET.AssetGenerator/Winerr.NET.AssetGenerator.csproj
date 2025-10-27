@@ -9,9 +9,9 @@
 		<Title>Winerr.NET Asset Generator</Title>
 
 		<Major>0</Major>
-		<Minor>7</Minor>
+		<Minor>8</Minor>
 		<Patch>0</Patch>
-        <BuildNumber>220</BuildNumber>
+        <BuildNumber>384</BuildNumber>
         <VersionSuffix></VersionSuffix>
 
 		<FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>
