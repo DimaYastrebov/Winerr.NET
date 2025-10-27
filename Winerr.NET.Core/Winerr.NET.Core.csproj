@@ -8,8 +8,8 @@
 		<Title>Winerr.NET Core Library</Title>
 		<Major>0</Major>
 		<Minor>14</Minor>
-		<Patch>0</Patch>
-        <BuildNumber>645</BuildNumber>
+		<Patch>1</Patch>
+        <BuildNumber>646</BuildNumber>
 		<VersionSuffix></VersionSuffix>
 
 		<FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>

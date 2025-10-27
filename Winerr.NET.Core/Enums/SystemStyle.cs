@@ -91,9 +91,9 @@ namespace Winerr.NET.Core.Enums
                 ExpectedIconSize = new Size(32, 32),
                 IconPaddingLeft = 10,
                 IconPaddingTop = 10,
-                IconPaddingRight = 9,
+                IconPaddingRight = 10,
                 TextPaddingRight = 9,
-                TextPaddingTop = 13,
+                TextPaddingTop = 15,
                 TextPaddingBottom = 16,
                 DefaultMaxWidth = 1024
             });
