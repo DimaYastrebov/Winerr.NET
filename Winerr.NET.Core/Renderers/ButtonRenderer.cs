@@ -8,6 +8,7 @@ using Winerr.NET.Core.Helpers;
 using Winerr.NET.Core.Managers;
 using Winerr.NET.Core.Models;
 using Winerr.NET.Core.Models.Styles;
+using Winerr.NET.Core.Text;
 
 namespace Winerr.NET.Core.Renderers
 {
@@ -31,8 +32,9 @@ namespace Winerr.NET.Core.Renderers
                 throw new InvalidOperationException("Font metrics not loaded for button font set.");
             }
 
-            var textWrapper = new TextWrapper(fontSet.Metrics);
-            int textWidth = textWrapper.MeasureTextWidth(config.Text);
+            var textWrapper = new TextWrapper(fontSet.Metrics, metrics.ButtonEmojiFontSet?.Metrics);
+            var processedSymbols = TextParser.Parse(config.Text);
+            int textWidth = textWrapper.MeasureSymbolsWidth(processedSymbols);
 
             var contentWidth = textWidth + buttonMetrics.HorizontalPadding * 2;
             return Math.Max(contentWidth, metrics.MinButtonWidth);
@@ -54,14 +56,20 @@ namespace Winerr.NET.Core.Renderers
                 throw new InvalidOperationException("Font metrics not loaded for button font set.");
             }
 
-            var textRenderer = new TextRenderer(fontSet);
+            var textRenderer = new TextRenderer(fontSet, metrics.ButtonEmojiFontSet);
             using var textResult = textRenderer.DrawText(
                 config.Text,
                 null,
-                buttonMetrics.FontVariation,
+                mainVariationName: buttonMetrics.FontVariation,
+                emojiVariationName: metrics.ButtonEmojiFontVariation,
                 drawMnemonic: config.TextConfig?.DrawMnemonic ?? false,
                 truncationMode: TextTruncationMode.Ellipsis
             );
+
+            if (config.Type == ButtonType.Disabled)
+            {
+                textResult.Image.Mutate(ctx => ctx.Grayscale());
+            }
 
             var finalWidth = MeasureButtonWidth(config, style);
             var buttonImage = new Image<Rgba32>(finalWidth, metrics.ButtonHeight);

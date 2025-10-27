@@ -9,6 +9,7 @@ using System.Text;
 using Winerr.NET.Core.Enums;
 using Winerr.NET.Core.Models.Assets;
 using Winerr.NET.Core.Models.Fonts;
+using Winerr.NET.Core.Text;
 
 namespace Winerr.NET.Core.Managers
 {
@@ -434,7 +435,7 @@ namespace Winerr.NET.Core.Managers
                 if (variationImage != null)
                 {
                     fontSet.Variations[currentPath] = variationImage;
-                    var precutCache = new Dictionary<int, Image<Rgba32>>();
+                    var precutCache = new Dictionary<Symbol, Image<Rgba32>>();
 
                     foreach (var fontChar in fontSet.Metrics.Characters.Values)
                     {
@@ -443,7 +444,8 @@ namespace Winerr.NET.Core.Managers
                             var sourceRect = new Rectangle(0, 0, variationImage.Width, variationImage.Height);
                             if (sourceRect.Contains(fontChar.Source))
                             {
-                                precutCache[fontChar.Id] = variationImage.Clone(ctx => ctx.Crop(fontChar.Source));
+                                var croppedGlyph = variationImage.Clone(ctx => ctx.Crop(fontChar.Source));
+                                precutCache[fontChar.Id] = croppedGlyph;
                             }
                         }
                     }

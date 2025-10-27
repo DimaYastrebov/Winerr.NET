@@ -1,113 +1,157 @@
-using System.Text;
+using System.Collections.Generic;
 using Winerr.NET.Core.Enums;
 using Winerr.NET.Core.Models.Fonts;
+using Winerr.NET.Core.Text;
 
 namespace Winerr.NET.Core.Renderers
 {
     public class TextWrapper
     {
-        private readonly BitmapFont _font;
+        private readonly BitmapFont _mainFont;
+        private readonly BitmapFont? _emojiFont;
+        private readonly Symbol _spaceSymbol;
+        private readonly Symbol _replacementSymbol;
+        private readonly Symbol _fallbackReplacementSymbol;
+        private readonly List<Symbol> _ellipsisSymbols;
 
-        public TextWrapper(BitmapFont font)
+        public TextWrapper(BitmapFont mainFont, BitmapFont? emojiFont = null)
         {
-            _font = font;
+            _mainFont = mainFont;
+            _emojiFont = emojiFont;
+
+            _spaceSymbol = new Symbol(' ');
+            _replacementSymbol = new Symbol(0xFFFD);
+            _fallbackReplacementSymbol = new Symbol('?');
+            _ellipsisSymbols = TextParser.Parse("...");
         }
 
-        public List<string> Wrap(string text, int maxWidth, TextWrapMode wrapMode, TextTruncationMode truncationMode)
+        public bool TryGetCharacter(Symbol symbol, out FontChar? fontChar, out bool isEmoji)
+        {
+            fontChar = null;
+            isEmoji = false;
+
+            if (_mainFont.Characters.TryGetValue(symbol, out fontChar))
+            {
+                isEmoji = false;
+                return true;
+            }
+
+            if (_emojiFont?.Characters != null)
+            {
+                if (_emojiFont.Characters.TryGetValue(symbol, out fontChar))
+                {
+                    isEmoji = true;
+                    return true;
+                }
+            }
+
+            isEmoji = false;
+            if (_mainFont.Characters.TryGetValue(_replacementSymbol, out fontChar))
+            {
+                return true;
+            }
+            if (_mainFont.Characters.TryGetValue(_fallbackReplacementSymbol, out fontChar))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public List<List<Symbol>> Wrap(List<Symbol> symbols, int maxWidth, TextWrapMode wrapMode, TextTruncationMode truncationMode)
         {
             if (truncationMode == TextTruncationMode.SingleLine || truncationMode == TextTruncationMode.Ellipsis)
             {
-                var lines = new List<string>();
-                string singleLineText = text.Replace("\r", "").Replace("\n", " ");
-                if (MeasureTextWidth(singleLineText) > maxWidth)
+                var singleLineSymbols = symbols.Where(s => s.ToString() != "\n" && s.ToString() != "\r").ToList();
+
+                if (MeasureSymbolsWidth(singleLineSymbols) > maxWidth)
                 {
                     if (truncationMode == TextTruncationMode.Ellipsis)
                     {
-                        int ellipsisWidth = MeasureTextWidth("...");
-                        string truncated = TruncateTextToWidth(singleLineText, maxWidth - ellipsisWidth);
-                        lines.Add(truncated + "...");
+                        int ellipsisWidth = MeasureSymbolsWidth(_ellipsisSymbols);
+                        var truncated = TruncateSymbolsToWidth(singleLineSymbols, maxWidth - ellipsisWidth);
+                        truncated.AddRange(_ellipsisSymbols);
+                        return new List<List<Symbol>> { truncated };
                     }
                     else
                     {
-                        lines.Add(TruncateTextToWidth(singleLineText, maxWidth));
+                        return new List<List<Symbol>> { TruncateSymbolsToWidth(singleLineSymbols, maxWidth) };
                     }
                 }
                 else
                 {
-                    lines.Add(singleLineText);
+                    return new List<List<Symbol>> { singleLineSymbols };
                 }
-                return lines;
             }
 
             if (wrapMode == TextWrapMode.Symbol)
             {
-                return WrapBySymbol(text, maxWidth);
+                return WrapBySymbol(symbols, maxWidth);
             }
-            return WrapByWord(text, maxWidth, wrapMode);
+            return WrapByWord(symbols, maxWidth, wrapMode);
         }
 
-        private List<string> WrapBySymbol(string text, int maxWidth)
+        private List<List<Symbol>> WrapBySymbol(List<Symbol> symbols, int maxWidth)
         {
-            var finalLines = new List<string>();
-            var paragraphs = text.Replace("\r\n", "\n").Split('\n');
+            var finalLines = new List<List<Symbol>>();
+            var currentLine = new List<Symbol>();
 
-            foreach (var paragraph in paragraphs)
+            foreach (var symbol in symbols)
             {
-                if (string.IsNullOrEmpty(paragraph))
+                if (symbol.ToString() == "\n")
                 {
-                    finalLines.Add("");
+                    finalLines.Add(currentLine);
+                    currentLine = new List<Symbol>();
                     continue;
                 }
 
-                var currentLine = new StringBuilder();
-                foreach (char c in paragraph)
+                var tempLine = new List<Symbol>(currentLine) { symbol };
+                if (MeasureSymbolsWidth(tempLine) > maxWidth && currentLine.Count > 0)
                 {
-                    currentLine.Append(c);
-                    if (MeasureTextWidth(currentLine.ToString()) > maxWidth && currentLine.Length > 1)
-                    {
-                        char lastChar = currentLine[currentLine.Length - 1];
-                        currentLine.Length--;
-                        finalLines.Add(currentLine.ToString());
-                        currentLine.Clear();
-                        currentLine.Append(lastChar);
-                    }
+                    finalLines.Add(currentLine);
+                    currentLine = new List<Symbol> { symbol };
                 }
-
-                if (currentLine.Length > 0)
+                else
                 {
-                    finalLines.Add(currentLine.ToString());
+                    currentLine.Add(symbol);
                 }
             }
+
+            if (currentLine.Count > 0)
+            {
+                finalLines.Add(currentLine);
+            }
+
             return finalLines;
         }
 
-        private List<string> WrapByWord(string text, int maxWidth, TextWrapMode wrapMode)
+        private List<List<Symbol>> WrapByWord(List<Symbol> symbols, int maxWidth, TextWrapMode wrapMode)
         {
-            var finalLines = new List<string>();
-            var paragraphs = text.Replace("\r\n", "\n").Split('\n');
+            var finalLines = new List<List<Symbol>>();
+            var paragraphs = SplitIntoParagraphs(symbols);
 
             foreach (var paragraph in paragraphs)
             {
-                if (string.IsNullOrEmpty(paragraph))
+                if (paragraph.Count == 0)
                 {
-                    finalLines.Add("");
+                    finalLines.Add(new List<Symbol>());
                     continue;
                 }
 
-                var words = paragraph.Split(' ');
-                var currentLine = new StringBuilder();
+                var words = SplitIntoWords(paragraph);
+                var currentLine = new List<Symbol>();
 
                 foreach (var word in words)
                 {
-                    if (string.IsNullOrEmpty(word)) continue;
-                    var wordWidth = MeasureTextWidth(word);
+                    if (word.Count == 0) continue;
+                    var wordWidth = MeasureSymbolsWidth(word);
 
                     if (wrapMode == TextWrapMode.Auto && wordWidth > maxWidth)
                     {
-                        if (currentLine.Length > 0)
+                        if (currentLine.Count > 0)
                         {
-                            finalLines.Add(currentLine.ToString());
-                            currentLine.Clear();
+                            finalLines.Add(currentLine);
+                            currentLine = new List<Symbol>();
                         }
 
                         var brokenParts = BreakLongWord(word, maxWidth);
@@ -115,100 +159,148 @@ namespace Winerr.NET.Core.Renderers
                         {
                             finalLines.Add(brokenParts[i]);
                         }
-                        currentLine.Append(brokenParts.Last());
+                        currentLine.AddRange(brokenParts.Last());
                         continue;
                     }
 
-                    var spaceWidth = currentLine.Length > 0 ? MeasureTextWidth(" ") : 0;
-                    if (MeasureTextWidth(currentLine.ToString()) + spaceWidth + wordWidth > maxWidth)
+                    var spaceWidth = currentLine.Count > 0 ? MeasureSymbolsWidth(new List<Symbol> { _spaceSymbol }) : 0;
+                    if (MeasureSymbolsWidth(currentLine) + spaceWidth + wordWidth > maxWidth && currentLine.Count > 0)
                     {
-                        finalLines.Add(currentLine.ToString());
-                        currentLine.Clear();
-                        currentLine.Append(word);
+                        finalLines.Add(currentLine);
+                        currentLine = new List<Symbol>();
+                        currentLine.AddRange(word);
                     }
                     else
                     {
-                        if (currentLine.Length > 0) currentLine.Append(" ");
-                        currentLine.Append(word);
+                        if (currentLine.Count > 0) currentLine.Add(_spaceSymbol);
+                        currentLine.AddRange(word);
                     }
                 }
 
-                if (currentLine.Length > 0)
+                if (currentLine.Count > 0)
                 {
-                    finalLines.Add(currentLine.ToString());
+                    finalLines.Add(currentLine);
                 }
             }
             return finalLines;
         }
 
-        private List<string> BreakLongWord(string word, int maxWidth)
+        private List<List<Symbol>> SplitIntoParagraphs(List<Symbol> symbols)
         {
-            var parts = new List<string>();
-            var currentPart = new StringBuilder();
+            var paragraphs = new List<List<Symbol>>();
+            var currentParagraph = new List<Symbol>();
+            var newlineSymbol = new Symbol('\n');
 
-            foreach (char c in word)
+            foreach (var symbol in symbols)
             {
-                currentPart.Append(c);
-                if (MeasureTextWidth(currentPart.ToString()) > maxWidth && currentPart.Length > 1)
+                if (symbol.Equals(newlineSymbol))
                 {
-                    char lastChar = currentPart[currentPart.Length - 1];
-                    currentPart.Length--;
+                    paragraphs.Add(currentParagraph);
+                    currentParagraph = new List<Symbol>();
+                }
+                else
+                {
+                    currentParagraph.Add(symbol);
+                }
+            }
+            paragraphs.Add(currentParagraph);
+            return paragraphs;
+        }
 
-                    parts.Add(currentPart.ToString());
-                    currentPart.Clear();
-                    currentPart.Append(lastChar);
+        private List<List<Symbol>> SplitIntoWords(List<Symbol> symbols)
+        {
+            var words = new List<List<Symbol>>();
+            var currentWord = new List<Symbol>();
+
+            foreach (var symbol in symbols)
+            {
+                if (symbol.Equals(_spaceSymbol))
+                {
+                    if (currentWord.Count > 0)
+                    {
+                        words.Add(currentWord);
+                        currentWord = new List<Symbol>();
+                    }
+                }
+                else
+                {
+                    currentWord.Add(symbol);
                 }
             }
 
-            if (currentPart.Length > 0)
+            if (currentWord.Count > 0)
             {
-                parts.Add(currentPart.ToString());
+                words.Add(currentWord);
+            }
+
+            return words;
+        }
+
+        private List<List<Symbol>> BreakLongWord(List<Symbol> word, int maxWidth)
+        {
+            var parts = new List<List<Symbol>>();
+            var currentPart = new List<Symbol>();
+
+            foreach (var symbol in word)
+            {
+                var tempPart = new List<Symbol>(currentPart) { symbol };
+                if (MeasureSymbolsWidth(tempPart) > maxWidth && currentPart.Count > 0)
+                {
+                    parts.Add(currentPart);
+                    currentPart = new List<Symbol> { symbol };
+                }
+                else
+                {
+                    currentPart.Add(symbol);
+                }
+            }
+
+            if (currentPart.Count > 0)
+            {
+                parts.Add(currentPart);
             }
 
             return parts;
         }
 
-        public string TruncateTextToWidth(string text, int maxWidth)
+        public List<Symbol> TruncateSymbolsToWidth(List<Symbol> symbols, int maxWidth)
         {
-            if (MeasureTextWidth(text) <= maxWidth) return text;
-            var sb = new StringBuilder();
-            for (int i = 0; i < text.Length; i++)
+            if (MeasureSymbolsWidth(symbols) <= maxWidth) return symbols;
+
+            var result = new List<Symbol>();
+            foreach (var symbol in symbols)
             {
-                char c = text[i];
-                if (MeasureTextWidth(sb.ToString() + c) > maxWidth) break;
-                sb.Append(c);
+                var tempResult = new List<Symbol>(result) { symbol };
+                if (MeasureSymbolsWidth(tempResult) > maxWidth) break;
+                result.Add(symbol);
             }
-            return sb.ToString();
+            return result;
         }
 
-        public int MeasureTextWidth(string text)
+        public int MeasureSymbolsWidth(List<Symbol> symbols)
         {
-            if (string.IsNullOrEmpty(text)) return 0;
+            if (symbols == null || symbols.Count == 0) return 0;
+
             int totalWidth = 0;
-            for (int i = 0; i < text.Length; i++)
+            Symbol? previousSymbol = null;
+            bool wasPreviousEmoji = false;
+
+            foreach (var symbol in symbols)
             {
-                char c = text[i];
-                if (TryGetCharacter(c, out var fontChar))
+                if (TryGetCharacter(symbol, out var fontChar, out bool isEmoji) && fontChar != null)
                 {
-                    if (fontChar != null)
+                    int kerning = 0;
+                    if (previousSymbol.HasValue && !isEmoji && !wasPreviousEmoji)
                     {
-                        totalWidth += fontChar.XAdvance;
+                        kerning = _mainFont.GetKerning(previousSymbol.Value, symbol);
                     }
-                    if (i < text.Length - 1) totalWidth += _font.GetKerning(c, text[i + 1]);
+                    totalWidth += kerning + fontChar.XAdvance;
+
+                    previousSymbol = symbol;
+                    wasPreviousEmoji = isEmoji;
                 }
             }
             return totalWidth;
-        }
-
-        public bool TryGetCharacter(char c, out FontChar? fontChar)
-        {
-            fontChar = null;
-            if (_font?.Characters == null) return false;
-
-            if (_font.Characters.TryGetValue(c, out fontChar)) return true;
-            if (_font.Characters.TryGetValue((char)65533, out fontChar)) return true;
-            if (_font.Characters.TryGetValue('?', out fontChar)) return true;
-            return false;
         }
     }
 }

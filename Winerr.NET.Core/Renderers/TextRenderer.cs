@@ -1,29 +1,33 @@
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Winerr.NET.Core.Enums;
 using Winerr.NET.Core.Models;
 using Winerr.NET.Core.Models.Fonts;
 using Winerr.NET.Core.Models.Styles;
+using Winerr.NET.Core.Text;
 
 namespace Winerr.NET.Core.Renderers
 {
     public class TextRenderer
     {
-        private readonly FontSet _fontSet;
+        private readonly FontSet _mainFontSet;
+        private readonly FontSet? _emojiFontSet;
         private readonly GraphicsOptions _fastDrawOptions;
         private readonly TextWrapper? _textWrapper;
 
-        public TextRenderer(FontSet fontSet)
+        public TextRenderer(FontSet mainFontSet, FontSet? emojiFontSet = null)
         {
-            _fontSet = fontSet;
+            _mainFontSet = mainFontSet;
+            _emojiFontSet = emojiFontSet;
 
-            if (_fontSet.Metrics != null)
+            if (_mainFontSet.Metrics != null)
             {
-                _textWrapper = new TextWrapper(_fontSet.Metrics);
+                _textWrapper = new TextWrapper(_mainFontSet.Metrics, _emojiFontSet?.Metrics);
             }
 
             _fastDrawOptions = new GraphicsOptions
@@ -35,19 +39,19 @@ namespace Winerr.NET.Core.Renderers
         }
 
         public TextRenderResult DrawText(
-            string text,
-            int? maxWidth = null,
-            string variationName = "Black",
-            TextTruncationMode truncationMode = TextTruncationMode.None,
-            TextWrapMode wrapMode = TextWrapMode.Auto,
-            bool drawMnemonic = false,
-            float lineSpacing = 0f,
-            ShadowConfig? shadowConfig = null)
+    string text,
+    int? maxWidth = null,
+    string mainVariationName = "Black",
+    string? emojiVariationName = null,
+    TextTruncationMode truncationMode = TextTruncationMode.None,
+    TextWrapMode wrapMode = TextWrapMode.Auto,
+    bool drawMnemonic = false,
+    float lineSpacing = 0f,
+    ShadowConfig? shadowConfig = null)
         {
             var totalStopwatch = Stopwatch.StartNew();
-
             var emptyImage = new Image<Rgba32>(1, 1);
-            var metrics = _fontSet.Metrics;
+            var metrics = _mainFontSet.Metrics;
 
             if (string.IsNullOrEmpty(text) || metrics == null || _textWrapper == null)
             {
@@ -55,29 +59,21 @@ namespace Winerr.NET.Core.Renderers
                 return new TextRenderResult(emptyImage, Size.Empty, 0, totalStopwatch.Elapsed, TimeSpan.Zero);
             }
 
-            var lines = _textWrapper.Wrap(text.Replace("&", ""), maxWidth ?? int.MaxValue, wrapMode, truncationMode);
+            var processedSymbols = TextParser.Parse(text.Replace("&", ""));
+            var lines = _textWrapper.Wrap(processedSymbols, maxWidth ?? int.MaxValue, wrapMode, truncationMode);
 
-            if (!lines.Any())
+            if (!lines.Any() || lines.All(l => l.Count == 0))
             {
                 totalStopwatch.Stop();
                 return new TextRenderResult(emptyImage, Size.Empty, 0, totalStopwatch.Elapsed, TimeSpan.Zero);
             }
 
-            int canvasWidth = 0;
-            if (maxWidth.HasValue)
-            {
-                canvasWidth = maxWidth.Value;
-            }
-            else
-            {
-                canvasWidth = lines.Max(line => _textWrapper.MeasureTextWidth(line));
-            }
-
+            int canvasWidth = maxWidth.HasValue ? maxWidth.Value : lines.Max(line => _textWrapper.MeasureSymbolsWidth(line));
             int canvasHeight = lines.Count * metrics.LineHeight;
             if (canvasWidth <= 0) canvasWidth = 1;
             if (canvasHeight <= 0) canvasHeight = 1;
 
-            var (textImage, renderDuration) = RenderPass(lines, canvasWidth, canvasHeight, variationName, drawMnemonic);
+            var (textImage, renderDuration) = RenderPass(lines, canvasWidth, canvasHeight, mainVariationName, emojiVariationName, drawMnemonic);
 
             var bounds = FindBoundingBox(textImage);
             if (bounds.Width <= 0 || bounds.Height <= 0)
@@ -86,24 +82,60 @@ namespace Winerr.NET.Core.Renderers
                 return new TextRenderResult(emptyImage, Size.Empty, 0, totalStopwatch.Elapsed, renderDuration);
             }
 
+            var originalBounds = bounds;
             textImage.Mutate(ctx => ctx.Crop(bounds));
-
             int finalBaselineY = metrics.Base - bounds.Y;
+
+            Image<Rgba32> finalImageToStabilize = textImage;
 
             if (shadowConfig != null)
             {
                 var shadowResult = RenderWithShadow(textImage, finalBaselineY, shadowConfig);
-                totalStopwatch.Stop();
-                return new TextRenderResult(shadowResult.Image, shadowResult.Image.Size, shadowResult.BaselineY, totalStopwatch.Elapsed, renderDuration);
+                finalImageToStabilize = shadowResult.Image;
+                finalBaselineY = shadowResult.BaselineY;
             }
 
+            // --- НАЧАЛО БЛОКА СТАБИЛИЗАЦИИ (v2, с фиксом тени) ---
+            int padding = 0;
+            if (shadowConfig != null)
+            {
+                // Рассчитываем паддинг, который добавляет тень
+                padding = (int)System.Math.Ceiling(shadowConfig.Sigma * 3);
+            }
+
+            // Создаем финальный холст с предсказуемой высотой + место для тени
+            int stableHeight = (lines.Count * metrics.LineHeight) + (padding * 2);
+            if (stableHeight <= 0) stableHeight = 1;
+
+            // Ширина холста должна быть достаточной, чтобы вместить результат с тенью
+            int stableWidth = Math.Max(canvasWidth, finalImageToStabilize.Width);
+            if (stableWidth <= 0) stableWidth = 1;
+
+            var stableCanvas = new Image<Rgba32>(stableWidth, stableHeight);
+
+            // Вычисляем, куда поместить наше изображение.
+            // Целевая базовая линия на стабильном холсте = metrics.Base + padding (чтобы было место для тени сверху)
+            // Текущая базовая линия в нашем (возможно, с тенью) изображении = finalBaselineY
+            int drawY = (metrics.Base + padding) - finalBaselineY;
+            int drawX = originalBounds.X;
+
+            stableCanvas.Mutate(ctx => ctx.DrawImage(finalImageToStabilize, new Point(drawX, drawY), _fastDrawOptions));
+
+            if (finalImageToStabilize != stableCanvas)
+            {
+                finalImageToStabilize.Dispose();
+            }
+            // --- КОНЕЦ БЛОКА СТАБИЛИЗАЦИИ ---
+
             totalStopwatch.Stop();
-            return new TextRenderResult(textImage, textImage.Size, finalBaselineY, totalStopwatch.Elapsed, renderDuration);
+            // Возвращаем СТАБИЛЬНЫЙ холст и СТАБИЛЬНУЮ базовую линию (с учетом паддинга)
+            int stableBaselineY = metrics.Base + padding;
+            return new TextRenderResult(stableCanvas, stableCanvas.Size, stableBaselineY, totalStopwatch.Elapsed, renderDuration);
         }
 
         private (Image<Rgba32> Image, int BaselineY) RenderWithShadow(Image<Rgba32> textImage, int baselineY, ShadowConfig shadowConfig)
         {
-            int padding = (int)Math.Ceiling(shadowConfig.Sigma * 3);
+            int padding = (int)System.Math.Ceiling(shadowConfig.Sigma * 3);
             var canvasSize = new Size(textImage.Width + padding * 2, textImage.Height + padding * 2);
             var shadowMask = new Image<Rgba32>(canvasSize.Width, canvasSize.Height);
 
@@ -130,18 +162,28 @@ namespace Winerr.NET.Core.Renderers
             return (finalImage, finalBaselineY);
         }
 
-        private (Image<Rgba32> Image, TimeSpan Duration) RenderPass(List<string> lines, int width, int height, string variationName, bool drawMnemonic)
+        private (Image<Rgba32> Image, TimeSpan Duration) RenderPass(List<List<Symbol>> lines, int width, int height, string mainVariationName, string? emojiVariationName, bool drawMnemonic)
         {
             var finalImage = new Image<Rgba32>(width, height);
-            var metrics = _fontSet.Metrics!;
+            var mainMetrics = _mainFontSet.Metrics!;
             var textWrapper = _textWrapper!;
 
-            if (!_fontSet.PrecutGlyphs.TryGetValue(variationName, out var precutGlyphs))
+            if (!_mainFontSet.PrecutGlyphs.TryGetValue(mainVariationName, out var mainPrecutGlyphs))
             {
-                precutGlyphs = _fontSet.PrecutGlyphs.FirstOrDefault().Value;
-                if (precutGlyphs == null)
+                mainPrecutGlyphs = _mainFontSet.PrecutGlyphs.FirstOrDefault().Value;
+            }
+
+            if (mainPrecutGlyphs == null)
+            {
+                return (finalImage, TimeSpan.Zero);
+            }
+
+            Dictionary<Symbol, Image<Rgba32>>? emojiPrecutGlyphs = null;
+            if (_emojiFontSet != null && !string.IsNullOrEmpty(emojiVariationName))
+            {
+                if (!_emojiFontSet.PrecutGlyphs.TryGetValue(emojiVariationName, out emojiPrecutGlyphs))
                 {
-                    return (finalImage, TimeSpan.Zero);
+                    emojiPrecutGlyphs = _emojiFontSet.PrecutGlyphs.FirstOrDefault().Value;
                 }
             }
 
@@ -149,62 +191,46 @@ namespace Winerr.NET.Core.Renderers
             finalImage.Mutate(ctx =>
             {
                 int drawLineY = 0;
-                for (int i = 0; i < lines.Count; i++)
+                foreach (var line in lines)
                 {
-                    var line = lines[i];
+                    int drawCursorX = 0;
+                    Symbol? previousSymbol = null;
+                    bool wasPreviousEmoji = false;
 
-                    if (drawMnemonic && !string.IsNullOrEmpty(line))
+                    foreach (var symbol in line)
                     {
-                        string baseVariationName = variationName.Split('.')[0];
-
-                        if (FontVariations.ColorMap.TryGetValue(baseVariationName, out var lineColor))
+                        if (textWrapper.TryGetCharacter(symbol, out var fontChar, out bool isEmoji) && fontChar != null)
                         {
-                            if (textWrapper.TryGetCharacter(line[0], out var firstChar) && firstChar != null)
+                            int kerning = 0;
+                            if (previousSymbol.HasValue && !isEmoji && !wasPreviousEmoji)
                             {
-                                int lineY = drawLineY + metrics.LineHeight - 2;
+                                kerning = mainMetrics.GetKerning(previousSymbol.Value, symbol);
+                            }
+                            drawCursorX += kerning;
 
-                                var startPoint = new PointF(firstChar.Offset.X, lineY);
-                                var endPoint = new PointF(firstChar.Offset.X + firstChar.XAdvance, lineY);
-
-                                if (endPoint.X > startPoint.X)
+                            var precutGlyphs = isEmoji ? emojiPrecutGlyphs : mainPrecutGlyphs;
+                            if (precutGlyphs != null)
+                            {
+                                if (precutGlyphs.TryGetValue(fontChar.Id, out var charSprite))
                                 {
-                                    ctx.DrawLine(lineColor, 1, startPoint, endPoint);
+                                    var location = new Point((drawCursorX + fontChar.Offset.X), (drawLineY + fontChar.Offset.Y));
+                                    ctx.DrawImage(charSprite, location, _fastDrawOptions);
                                 }
                             }
-                        }
-                    }
-
-                    int drawCursorX = 0;
-                    for (int j = 0; j < line.Length; j++)
-                    {
-                        char c = line[j];
-
-                        if (textWrapper.TryGetCharacter(c, out var fontChar) && fontChar != null)
-                        {
-                            if (precutGlyphs.TryGetValue(fontChar.Id, out var charSprite))
-                            {
-                                var location = new Point(
-                                    (drawCursorX + fontChar.Offset.X),
-                                    (drawLineY + fontChar.Offset.Y)
-                                );
-                                ctx.DrawImage(charSprite, location, _fastDrawOptions);
-                            }
-
                             drawCursorX += fontChar.XAdvance;
-                            if (j < line.Length - 1)
-                            {
-                                drawCursorX += metrics.GetKerning(c, line[j + 1]);
-                            }
+
+                            previousSymbol = symbol;
+                            wasPreviousEmoji = isEmoji;
                         }
                         else
                         {
-                            if (textWrapper.TryGetCharacter(' ', out var spaceChar) && spaceChar != null)
+                            if (textWrapper.TryGetCharacter(new Symbol(' '), out var spaceChar, out _) && spaceChar != null)
                             {
                                 drawCursorX += spaceChar.XAdvance;
                             }
                         }
                     }
-                    drawLineY += metrics.LineHeight;
+                    drawLineY += mainMetrics.LineHeight;
                 }
             });
             renderStopwatch.Stop();
@@ -220,7 +246,7 @@ namespace Winerr.NET.Core.Renderers
             {
                 for (int y = 0; y < accessor.Height; y++)
                 {
-                    Span<Rgba32> row = accessor.GetRowSpan(y);
+                    System.Span<Rgba32> row = accessor.GetRowSpan(y);
                     for (int x = 0; x < row.Length; x++)
                     {
                         if (row[x].A > 0)

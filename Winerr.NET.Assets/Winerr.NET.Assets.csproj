@@ -7,9 +7,9 @@
 		<Title>Winerr.NET Assets Library</Title>
 
 		<Major>0</Major>
-		<Minor>8</Minor>
+		<Minor>9</Minor>
 		<Patch>0</Patch>
-        <BuildNumber>185</BuildNumber>
+        <BuildNumber>243</BuildNumber>
         <VersionSuffix></VersionSuffix>
 
 		<FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>

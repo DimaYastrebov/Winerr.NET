@@ -10,19 +10,31 @@ namespace Winerr.NET.Core.Models.Styles
     public class StyleMetrics
     {
         private FontSet? _windowTitleFontSet;
+        private FontSet? _windowTitleEmojiFontSet;
         private FontSet? _textFontSet;
+        private FontSet? _emojiFontSet;
+        private FontSet? _buttonEmojiFontSet;
         private int? _minContentHeight;
 
         public string WindowTitleFontName { get; set; } = string.Empty;
         public string WindowTitleFontSizeKey { get; set; } = string.Empty;
         public string WindowTitleFontVariation { get; set; } = string.Empty;
+        public string WindowTitleEmojiFontName { get; set; } = string.Empty;
+        public string WindowTitleEmojiFontSizeKey { get; set; } = string.Empty;
+        public string WindowTitleEmojiFontVariation { get; set; } = string.Empty;
 
         public string TextFontName { get; set; } = string.Empty;
         public string TextFontSizeKey { get; set; } = string.Empty;
         public string TextFontVariation { get; set; } = string.Empty;
+        public string EmojiFontName { get; set; } = string.Empty;
+        public string EmojiFontSizeKey { get; set; } = string.Empty;
+        public string EmojiFontVariation { get; set; } = string.Empty;
 
         public string ButtonFontName { get; set; } = string.Empty;
         public string ButtonFontSizeKey { get; set; } = string.Empty;
+        public string ButtonEmojiFontName { get; set; } = string.Empty;
+        public string ButtonEmojiFontSizeKey { get; set; } = string.Empty;
+        public string ButtonEmojiFontVariation { get; set; } = string.Empty;
 
         public int ButtonHeight { get; set; }
         public int MinButtonWidth { get; set; }
@@ -55,8 +67,11 @@ namespace Winerr.NET.Core.Models.Styles
         public ShadowConfig? Shadow { get; set; }
 
         public FontSet WindowTitleFontSet => _windowTitleFontSet ??= AssetManager.Instance.GetFontSet(WindowTitleFontName, WindowTitleFontSizeKey, WindowTitleFontVariation) ?? throw new InvalidOperationException($"Font '{WindowTitleFontName}' (size key: '{WindowTitleFontSizeKey}', variation: '{WindowTitleFontVariation}') not found.");
+        public FontSet? WindowTitleEmojiFontSet => _windowTitleEmojiFontSet ??= AssetManager.Instance.GetFontSet(WindowTitleEmojiFontName, WindowTitleEmojiFontSizeKey, WindowTitleEmojiFontVariation);
         public FontSet TextFontSet => _textFontSet ??= AssetManager.Instance.GetFontSet(TextFontName, TextFontSizeKey, TextFontVariation) ?? throw new InvalidOperationException($"Font '{TextFontName}' (size key: '{TextFontSizeKey}', variation: '{TextFontVariation}') not found.");
+        public FontSet? EmojiFontSet => _emojiFontSet ??= AssetManager.Instance.GetFontSet(EmojiFontName, EmojiFontSizeKey, EmojiFontVariation);
         public FontSet ButtonFontSet(string variation) => AssetManager.Instance.GetFontSet(ButtonFontName, ButtonFontSizeKey, variation) ?? throw new InvalidOperationException($"Font '{ButtonFontName}' (size key: '{ButtonFontSizeKey}', variation: '{variation}') not found.");
+        public FontSet? ButtonEmojiFontSet => _buttonEmojiFontSet ??= AssetManager.Instance.GetFontSet(ButtonEmojiFontName, ButtonEmojiFontSizeKey, ButtonEmojiFontVariation);
 
         public int MinContentHeight
         {

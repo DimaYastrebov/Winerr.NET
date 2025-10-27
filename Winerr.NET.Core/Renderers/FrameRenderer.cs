@@ -2,6 +2,8 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Winerr.NET.Core.Enums;
 using Winerr.NET.Core.Helpers;
@@ -17,7 +19,7 @@ namespace Winerr.NET.Core.Renderers
         ButtonAreaRenderResult? buttonResult,
         bool isCrossActive = true)
     {
-        private readonly Lazy<TextRenderer> _titleTextRenderer = new(() => new TextRenderer(style.Metrics.WindowTitleFontSet));
+        private readonly Lazy<TextRenderer> _titleTextRenderer = new(() => new TextRenderer(style.Metrics.WindowTitleFontSet, style.Metrics.WindowTitleEmojiFontSet));
 
         public FrameRenderResult DrawFrame()
         {
@@ -93,7 +95,8 @@ namespace Winerr.NET.Core.Renderers
                     using var titleResult = _titleTextRenderer.Value.DrawText(
                         title,
                         maxWidth: maxTitleWidth,
-                        variationName: metrics.WindowTitleFontVariation,
+                        mainVariationName: metrics.WindowTitleFontVariation,
+                        emojiVariationName: metrics.WindowTitleEmojiFontVariation,
                         truncationMode: TextTruncationMode.Ellipsis,
                         lineSpacing: metrics.LineSpacing,
                         shadowConfig: metrics.Shadow

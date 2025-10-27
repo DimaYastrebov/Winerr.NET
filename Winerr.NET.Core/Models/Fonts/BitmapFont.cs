@@ -1,5 +1,7 @@
 using System.Xml.Linq;
 using SixLabors.ImageSharp;
+using System.Globalization;
+using Winerr.NET.Core.Text;
 
 namespace Winerr.NET.Core.Models.Fonts
 {
@@ -15,15 +17,15 @@ namespace Winerr.NET.Core.Models.Fonts
         public XElement? Common { get; private set; }
         public XElement? KerningsNode { get; private set; }
 
-        public Dictionary<int, FontChar> Characters { get; } = new();
-        public Dictionary<int, Dictionary<int, int>> Kernings { get; } = new();
+        public Dictionary<Symbol, FontChar> Characters { get; } = new();
+        public Dictionary<Symbol, Dictionary<Symbol, int>> Kernings { get; } = new();
 
         private BitmapFont()
         {
             Face = string.Empty;
         }
 
-        public int GetKerning(char first, char second)
+        public int GetKerning(Symbol first, Symbol second)
         {
             if (Kernings.TryGetValue(first, out var kerningPair))
             {
@@ -47,6 +49,8 @@ namespace Winerr.NET.Core.Models.Fonts
             font.Face = info.Attribute("face")?.Value ?? "";
             font.Size = int.Parse(info.Attribute("size")?.Value ?? "0");
 
+            bool isHexFormat = info.Attribute("hex")?.Value == "1";
+
             var common = doc.Descendants("common").FirstOrDefault();
             if (common == null) throw new InvalidDataException("Font file is missing <common> tag.");
 
@@ -58,22 +62,29 @@ namespace Winerr.NET.Core.Models.Fonts
 
             foreach (var charElement in doc.Descendants("char"))
             {
-                var fontChar = new FontChar
+                var idAttribute = charElement.Attribute("id")?.Value ?? "0";
+                var symbol = ConvertIdAttributeToSymbol(idAttribute, isHexFormat);
+
+                if (symbol.HasValue)
                 {
-                    Id = int.Parse(charElement.Attribute("id")?.Value ?? "0"),
-                    Source = new Rectangle(
-                        int.Parse(charElement.Attribute("x")?.Value ?? "0"),
-                        int.Parse(charElement.Attribute("y")?.Value ?? "0"),
-                        int.Parse(charElement.Attribute("width")?.Value ?? "0"),
-                        int.Parse(charElement.Attribute("height")?.Value ?? "0")
-                        ),
-                    Offset = new Point(
-                        int.Parse(charElement.Attribute("xoffset")?.Value ?? "0"),
-                        int.Parse(charElement.Attribute("yoffset")?.Value ?? "0")
-                        ),
-                    XAdvance = int.Parse(charElement.Attribute("xadvance")?.Value ?? "0")
-                };
-                font.Characters[fontChar.Id] = fontChar;
+                    var fontChar = new FontChar
+                    {
+                        Id = symbol.Value,
+                        Source = new Rectangle(
+                            int.Parse(charElement.Attribute("x")?.Value ?? "0"),
+                            int.Parse(charElement.Attribute("y")?.Value ?? "0"),
+                            int.Parse(charElement.Attribute("width")?.Value ?? "0"),
+                            int.Parse(charElement.Attribute("height")?.Value ?? "0")
+                            ),
+                        Offset = new Point(
+                            int.Parse(charElement.Attribute("xoffset")?.Value ?? "0"),
+                            int.Parse(charElement.Attribute("yoffset")?.Value ?? "0")
+                            ),
+                        XAdvance = int.Parse(charElement.Attribute("xadvance")?.Value ?? "0")
+                    };
+
+                    font.Characters[fontChar.Id] = fontChar;
+                }
             }
 
             font.KerningsNode = doc.Descendants("kernings").FirstOrDefault();
@@ -82,19 +93,69 @@ namespace Winerr.NET.Core.Models.Fonts
             {
                 foreach (var kerningElement in font.KerningsNode.Descendants("kerning"))
                 {
-                    int first = int.Parse(kerningElement.Attribute("first")?.Value ?? "0");
-                    int second = int.Parse(kerningElement.Attribute("second")?.Value ?? "0");
-                    int amount = int.Parse(kerningElement.Attribute("amount")?.Value ?? "0");
+                    var firstAttr = kerningElement.Attribute("first")?.Value ?? "0";
+                    var secondAttr = kerningElement.Attribute("second")?.Value ?? "0";
 
-                    if (!font.Kernings.ContainsKey(first))
+                    var first = ConvertIdAttributeToSymbol(firstAttr, isHexFormat);
+                    var second = ConvertIdAttributeToSymbol(secondAttr, isHexFormat);
+
+                    if (first.HasValue && second.HasValue)
                     {
-                        font.Kernings[first] = new Dictionary<int, int>();
+                        int amount = int.Parse(kerningElement.Attribute("amount")?.Value ?? "0");
+
+                        if (!font.Kernings.ContainsKey(first.Value))
+                        {
+                            font.Kernings[first.Value] = new Dictionary<Symbol, int>();
+                        }
+                        font.Kernings[first.Value][second.Value] = amount;
                     }
-                    font.Kernings[first][second] = amount;
                 }
             }
 
             return font;
+        }
+
+        private static Symbol? ConvertIdAttributeToSymbol(string idAttribute, bool isHexFormat)
+        {
+            if (string.IsNullOrWhiteSpace(idAttribute))
+            {
+                return null;
+            }
+
+            var parts = idAttribute.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var codePoints = new List<int>();
+
+            foreach (var part in parts)
+            {
+                int code;
+                bool parsedSuccessfully;
+
+                if (isHexFormat)
+                {
+                    parsedSuccessfully = int.TryParse(part, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out code);
+                }
+                else
+                {
+                    parsedSuccessfully = int.TryParse(part, NumberStyles.Integer, CultureInfo.InvariantCulture, out code);
+                }
+
+                if (parsedSuccessfully)
+                {
+                    if (code >= 0 && code <= 0x10FFFF)
+                    {
+                        codePoints.Add(code);
+                    }
+                }
+            }
+
+            if (codePoints.Count > 0)
+            {
+                return new Symbol(codePoints);
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 }

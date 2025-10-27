@@ -1,11 +1,14 @@
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using System;
 using System.Diagnostics;
+using System.Linq;
 using Winerr.NET.Core.Enums;
 using Winerr.NET.Core.Helpers;
 using Winerr.NET.Core.Managers;
 using Winerr.NET.Core.Models;
+using Winerr.NET.Core.Text;
 
 namespace Winerr.NET.Core.Renderers
 {
@@ -15,7 +18,8 @@ namespace Winerr.NET.Core.Renderers
         private readonly Lazy<TextRenderer> _textRenderer = new(() =>
             new TextRenderer(
                 style.Metrics.TextFontSet ??
-                throw new InvalidOperationException($"Content font '{style.Metrics.TextFontSet}' not found for style '{style.DisplayName}'.")
+                throw new InvalidOperationException($"Content font '{style.Metrics.TextFontSet}' not found for style '{style.DisplayName}'."),
+                style.Metrics.EmojiFontSet
             )
         );
 
@@ -31,16 +35,17 @@ namespace Winerr.NET.Core.Renderers
 
             var iconSize = metrics.ExpectedIconSize;
 
-                int? maxTextWidth = null;
-                if (maxWidth.HasValue)
-                {
-                    maxTextWidth = maxWidth.Value - metrics.IconPaddingLeft - iconSize.Width - metrics.IconPaddingRight - metrics.TextPaddingRight;
-                }
+            int? maxTextWidth = null;
+            if (maxWidth.HasValue)
+            {
+                maxTextWidth = maxWidth.Value - metrics.IconPaddingLeft - iconSize.Width - metrics.IconPaddingRight - metrics.TextPaddingRight;
+            }
 
-            var textWrapper = new TextWrapper(fontSet.Metrics);
-            var lines = textWrapper.Wrap(text, maxTextWidth ?? int.MaxValue, wrapMode, truncationMode);
+            var textWrapper = new TextWrapper(fontSet.Metrics, metrics.EmojiFontSet?.Metrics);
+            var processedSymbols = TextParser.Parse(text);
+            var lines = textWrapper.Wrap(processedSymbols, maxTextWidth ?? int.MaxValue, wrapMode, truncationMode);
 
-            int textWidth = lines.Any() ? lines.Max(line => textWrapper.MeasureTextWidth(line)) : 0;
+            int textWidth = lines.Any() ? lines.Max(line => textWrapper.MeasureSymbolsWidth(line)) : 0;
             int textHeight = lines.Count * fontSet.Metrics.LineHeight;
 
             int naturalContentWidth = metrics.IconPaddingLeft + iconSize.Width + metrics.IconPaddingRight + textWidth + metrics.TextPaddingRight;
@@ -80,7 +85,8 @@ namespace Winerr.NET.Core.Renderers
             using var textResult = _textRenderer.Value.DrawText(
                 text: text,
                 maxWidth: maxTextWidth,
-                variationName: metrics.TextFontVariation,
+                mainVariationName: metrics.TextFontVariation,
+                emojiVariationName: metrics.EmojiFontVariation,
                 truncationMode: truncationMode,
                 wrapMode: wrapMode,
                 lineSpacing: metrics.LineSpacing

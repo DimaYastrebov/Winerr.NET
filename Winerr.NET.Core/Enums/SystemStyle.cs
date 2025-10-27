@@ -13,13 +13,22 @@ namespace Winerr.NET.Core.Enums
                 WindowTitleFontName = "Segoe_UI",
                 WindowTitleFontSizeKey = "9pt",
                 WindowTitleFontVariation = "Black.Win7Aero_title",
+                WindowTitleEmojiFontName = "Segoe_UI",
+                WindowTitleEmojiFontSizeKey = "9pt",
+                WindowTitleEmojiFontVariation = "Black.Win7_Emoji",
 
                 TextFontName = "Segoe_UI",
                 TextFontSizeKey = "8pt",
                 TextFontVariation = "Black",
+                EmojiFontName = "Segoe_UI",
+                EmojiFontSizeKey = "8pt",
+                EmojiFontVariation = "Black.Win7_Emoji",
 
                 ButtonFontName = "Segoe_UI",
                 ButtonFontSizeKey = "8pt",
+                ButtonEmojiFontName = "Segoe_UI",
+                ButtonEmojiFontSizeKey = "8pt",
+                ButtonEmojiFontVariation = "Black.Win7_Emoji",
 
                 Shadow = new ShadowConfig
                 {
@@ -82,9 +91,9 @@ namespace Winerr.NET.Core.Enums
                 ExpectedIconSize = new Size(32, 32),
                 IconPaddingLeft = 10,
                 IconPaddingTop = 10,
-                IconPaddingRight = 10,
+                IconPaddingRight = 9,
                 TextPaddingRight = 9,
-                TextPaddingTop = 16,
+                TextPaddingTop = 13,
                 TextPaddingBottom = 16,
                 DefaultMaxWidth = 1024
             });
