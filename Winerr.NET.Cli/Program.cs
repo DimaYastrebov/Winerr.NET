@@ -50,6 +50,8 @@ namespace Winerr.NET.Cli
 
                 if (!string.IsNullOrEmpty(opts.OutputPath))
                 {
+                    Directory.CreateDirectory(Path.GetDirectoryName(opts.OutputPath) ?? ".");
+
                     finalImage.SaveAsPng(opts.OutputPath);
                     LogSuccess($"Image saved to: {opts.OutputPath}");
                 }
