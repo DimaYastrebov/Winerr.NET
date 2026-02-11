@@ -115,6 +115,22 @@ app.Use((context, next) =>
 app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<AuthenticationMiddleware>();
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
+app.MapFallback(async (context) => {
+    var path = Path.Combine(app.Environment.WebRootPath ?? "wwwroot", "index.html");
+    if (File.Exists(path) && !context.Request.Path.StartsWithSegments("/v1"))
+    {
+        context.Response.ContentType = "text/html";
+        await context.Response.SendFileAsync(path);
+    }
+    else
+    {
+        context.Response.StatusCode = 404;
+    }
+});
+
 app.MapStyleEndpoints();
 app.MapImageEndpoints();
 app.MapIconEndpoints();
