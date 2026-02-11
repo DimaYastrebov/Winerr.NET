@@ -14,5 +14,15 @@ namespace Winerr.NET.Core.Enums
             Id = id;
             DisplayName = displayName;
         }
+
+        public static ButtonType FromString(string typeName)
+        {
+            return typeName?.ToLowerInvariant() switch
+            {
+                "recommended" => Recommended,
+                "disabled" => Disabled,
+                _ => Default
+            };
+        }
     }
 }
