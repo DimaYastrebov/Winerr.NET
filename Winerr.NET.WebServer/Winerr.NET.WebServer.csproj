@@ -8,8 +8,8 @@
         <Title>Winerr.NET Web Server</Title>
         <Major>0</Major>
         <Minor>6</Minor>
-        <Patch>0</Patch>
-        <BuildNumber>96</BuildNumber>
+        <Patch>1</Patch>
+        <BuildNumber>98</BuildNumber>
         <VersionSuffix></VersionSuffix>
 
         <FileVersion>$(Major).$(Minor).$(Patch).$(BuildNumber)</FileVersion>
@@ -33,6 +33,10 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Winerr.NET.Core\Winerr.NET.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="wwwroot\" />
     </ItemGroup>
 
 </Project>
