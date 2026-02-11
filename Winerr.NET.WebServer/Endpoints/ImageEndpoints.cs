@@ -164,13 +164,13 @@ namespace Winerr.NET.WebServer.Endpoints
                 {
                     using (var writer = CreateWriter(archiveStream, format, batchRequest.CompressionLevel))
                     {
+                        var renderer = new ErrorRenderer();
+
                         for (int i = 0; i < batchRequest.Requests.Count; i++)
                         {
                             var request = batchRequest.Requests[i];
                             var config = CreateErrorConfigFromRequest(request);
                             if (config == null) continue;
-
-                            var renderer = new ErrorRenderer();
 
                             var generationStopwatch = Stopwatch.StartNew();
                             using var image = renderer.Generate(config);
@@ -265,12 +265,7 @@ namespace Winerr.NET.WebServer.Endpoints
                 Buttons = request.Buttons?.Select(b => new ButtonConfig
                 {
                     Text = b.Text,
-                    Type = b.Type.ToLowerInvariant() switch
-                    {
-                        "recommended" => ButtonType.Recommended,
-                        "disabled" => ButtonType.Disabled,
-                        _ => ButtonType.Default
-                    },
+                    Type = ButtonType.FromString(b.Type),
                     TextConfig = new TextRenderConfig { DrawMnemonic = b.Mnemonic ?? false }
                 }).ToList() ?? new List<ButtonConfig>()
             };
