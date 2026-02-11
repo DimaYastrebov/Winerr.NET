@@ -155,7 +155,7 @@ const ConfigurationPanelFC: React.FC<ConfigurationPanelProps> = ({
             const requestBody: GenerateRequestBody = {
                 style_id: config.styleId, title: config.title, content: config.content,
                 icon_id: parseInt(config.iconId, 10) || 0, is_cross_enabled: config.isCrossEnabled,
-                sort_buttons: config.isButtonSortEnabled, buttons: config.buttons.map(({ id, ...rest }) => rest),
+                sort_buttons: config.isButtonSortEnabled, buttons: config.buttons.map(({ ...rest }) => rest),
             };
             if (config.buttonAlignment !== 'Auto') requestBody.button_alignment = config.buttonAlignment;
             if (config.maxWidth && !isNaN(parseInt(config.maxWidth, 10))) requestBody.max_width = parseInt(config.maxWidth, 10);
@@ -166,7 +166,7 @@ const ConfigurationPanelFC: React.FC<ConfigurationPanelProps> = ({
                 const requestBody: GenerateRequestBody = {
                     style_id: config.styleId, title: config.title, content: config.content,
                     icon_id: parseInt(config.iconId, 10) || 0, is_cross_enabled: config.isCrossEnabled,
-                    sort_buttons: config.isButtonSortEnabled, buttons: config.buttons.map(({ id, ...rest }) => rest),
+                    sort_buttons: config.isButtonSortEnabled, buttons: config.buttons.map(({ ...rest }) => rest),
                 };
                 if (config.buttonAlignment !== 'Auto') requestBody.button_alignment = config.buttonAlignment;
                 if (config.maxWidth && !isNaN(parseInt(config.maxWidth, 10))) requestBody.max_width = parseInt(config.maxWidth, 10);
@@ -207,8 +207,8 @@ const ConfigurationPanelFC: React.FC<ConfigurationPanelProps> = ({
         const dataToExport = {
             mode,
             batchSettings: mode === 'batch' ? batchSettings : undefined,
-            instances: errorInstances.map(({ id, name, config }) => {
-                const { maxIconId, supportedButtonTypes, ...userConfig } = config;
+            instances: errorInstances.map(({ name, config }) => {
+                const { ...userConfig } = config;
                 return { name, config: userConfig };
             })
         };
