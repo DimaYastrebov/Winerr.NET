@@ -20,6 +20,7 @@ Log/
 
 copy.bat
 copy_small.bat
+copy_web.bat
 publish.ps1
 publish.bat
 
@@ -37,3 +38,6 @@ Winerr.NET.WebUI/node_modules
 Winerr.NET.WebUI/package-lock.json
 
 GlobalSuppressions.cs
+
+out/
+wwwroot/
